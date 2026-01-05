@@ -1,0 +1,146 @@
+/* CSS Variables - Design System */
+:root {
+  /* Colors */
+  --background: hsl(220, 25%, 97%);
+  --foreground: hsl(220, 30%, 10%);
+  
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(220, 30%, 10%);
+  
+  --primary: hsl(195, 100%, 40%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --primary-light: hsla(195, 100%, 40%, 0.1);
+  
+  --secondary: hsl(220, 15%, 92%);
+  --secondary-foreground: hsl(220, 30%, 15%);
+  
+  --muted: hsl(220, 15%, 94%);
+  --muted-foreground: hsl(220, 10%, 45%);
+  
+  --accent: hsl(160, 70%, 45%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --destructive-light: hsla(0, 84%, 60%, 0.1);
+  
+  --success: hsl(145, 70%, 42%);
+  --success-foreground: hsl(0, 0%, 100%);
+  --success-light: hsla(145, 70%, 42%, 0.1);
+  
+  --warning: hsl(38, 92%, 50%);
+  --warning-foreground: hsl(0, 0%, 10%);
+  --warning-light: hsla(38, 92%, 50%, 0.1);
+  
+  --border: hsl(220, 20%, 85%);
+  --input: hsl(220, 20%, 85%);
+  --ring: hsl(195, 100%, 40%);
+  
+  /* Sidebar */
+  --sidebar-background: hsl(220, 30%, 12%);
+  --sidebar-foreground: hsl(220, 15%, 90%);
+  --sidebar-primary: hsl(195, 100%, 50%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(220, 25%, 20%);
+  --sidebar-accent-foreground: hsl(220, 15%, 90%);
+  --sidebar-border: hsl(220, 25%, 20%);
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border Radius */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  
+  /* Font Family */
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+}
+
+/* Dark mode */
+.dark {
+  --background: hsl(220, 30%, 8%);
+  --foreground: hsl(220, 15%, 95%);
+  
+  --card: hsl(220, 30%, 12%);
+  --card-foreground: hsl(220, 15%, 95%);
+  
+  --primary: hsl(195, 100%, 50%);
+  --primary-foreground: hsl(220, 30%, 8%);
+  
+  --secondary: hsl(220, 25%, 18%);
+  --secondary-foreground: hsl(220, 15%, 90%);
+  
+  --muted: hsl(220, 25%, 15%);
+  --muted-foreground: hsl(220, 15%, 60%);
+  
+  --border: hsl(220, 25%, 22%);
+  --input: hsl(220, 25%, 22%);
+  
+  --sidebar-background: hsl(220, 35%, 6%);
+  --sidebar-border: hsl(220, 30%, 15%);
+}
+
+/* Global Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--foreground);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+/* Utility Classes */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
