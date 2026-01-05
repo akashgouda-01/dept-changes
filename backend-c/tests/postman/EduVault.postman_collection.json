@@ -1,0 +1,217 @@
+{
+  "info": {
+    "name": "EduVault Backend",
+    "_postman_id": "eduvault-collection",
+    "description": "API tests for EduVault backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/health"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{base_url}}/health"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"status\": \"ok\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Certificates",
+      "item": [
+        {
+          "name": "POST /certificates/upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificates\": [\n    {\n      \"drive_link\": \"https://drive.google.com/file/d/12345\",\n      \"register_number\": \"RA2211003010\",\n      \"section\": \"A\",\n      \"student_name\": \"John Doe\",\n      \"uploaded_by\": \"faculty@citchennai.net\"\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/certificates/upload"
+          },
+          "response": [
+            {
+              "name": "202 Accepted",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{base_url}}/certificates/upload"
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"message\": \"certificates accepted for processing\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"invalid request payload\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"missing bearer token\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"forbidden\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Faculty Review",
+      "item": [
+        {
+          "name": "GET /certificates/pending-review",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/certificates/pending-review?limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "certificates",
+                "pending-review"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": []\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"missing bearer token\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"forbidden\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /certificates/review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"certificate_id\": \"<uuid>\",\n  \"status\": \"legit\",\n  \"is_legit\": true\n}"
+            },
+            "url": "{{base_url}}/certificates/review"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"message\": \"review recorded\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"status must be either 'legit' or 'not_legit'\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"missing bearer token\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"forbidden\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "{{base_url}}"
+    },
+    {
+      "key": "auth_token",
+      "value": "{{auth_token}}"
+    }
+  ]
+}
+

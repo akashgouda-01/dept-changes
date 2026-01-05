@@ -1,0 +1,14 @@
+{
+  "faculty1.cse@citchennai.net": [
+    {
+      "register_number": "22CSE101",
+      "name": "Arun",
+      "section": "CSE-A"
+    },
+    {
+      "register_number": "22CS101",
+      "name": "Arun",
+      "section": "CSE-A"
+    }
+  ]
+}
