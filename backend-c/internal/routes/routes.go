@@ -1,3 +1,6 @@
+//go:build legacy_http
+// +build legacy_http
+
 package routes
 
 import (

@@ -9,12 +9,13 @@ import (
 	"department-eduvault-backend/services"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
 
 // New constructs the HTTP router and wires routes to controllers.
-func New(healthService internalService.HealthService, dashboardService services.DashboardService, adminRepo repositories.AdminRepository, logger *zap.Logger) *gin.Engine {
+func New(healthService internalService.HealthService, dashboardService services.DashboardService, adminRepo repositories.AdminRepository, db *gorm.DB, logger *zap.Logger) *gin.Engine {
 	engine := gin.New()
 	engine.Use(
 		middleware.CORSMiddleware(),
@@ -37,6 +38,34 @@ func New(healthService internalService.HealthService, dashboardService services.
 	admin := engine.Group("/admin")
 	{
 		admin.POST("/seed", adminController.Seed)
+	}
+
+	// Certificate workflows (faculty & HOD)
+	certRepo := repositories.NewCertificateRepository(db)
+	certService := services.NewCertificateService(certRepo)
+	certController := controllers.NewCertificateController(certService)
+
+	certificates := engine.Group("/certificates")
+	{
+		certificates.POST("/upload", certController.UploadCertificates)
+		certificates.GET("/pending-review", certController.GetPendingReview)
+		certificates.POST("/review", certController.SubmitReview)
+	}
+
+	engine.POST("/faculty/certificate/verify", certController.TriggerMockVerification)
+
+	// HOD-facing endpoints
+	hodRepo := repositories.NewHodRepository(db)
+	hodService := services.NewHodService(hodRepo)
+	hodController := controllers.NewHodController(hodService)
+
+	hod := engine.Group("/hod")
+	{
+		hod.GET("/dashboard", hodController.HodDashboard)
+		hod.GET("/faculty/students", hodController.GetStudentStats)
+		hod.GET("/student/certificates", hodController.ListStudentCertificates)
+		hod.GET("/export/certificates/section", hodController.ExportCertificatesBySection)
+		hod.GET("/export/certificates/student", hodController.ExportCertificatesByStudent)
 	}
 
 	return engine

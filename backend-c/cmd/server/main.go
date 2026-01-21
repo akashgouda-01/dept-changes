@@ -53,7 +53,7 @@ func main() {
 
 	adminRepo := repositories.NewAdminRepository(database)
 
-	engine := router.New(healthService, dashboardService, adminRepo, logger)
+	engine := router.New(healthService, dashboardService, adminRepo, database, logger)
 
 	srv := server.New(engine, cfg)
 	if err := srv.Start(); err != nil {

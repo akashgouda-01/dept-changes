@@ -118,6 +118,34 @@ func (cc *CertificateController) SubmitReview(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "review recorded"})
 }
 
+// TriggerMockVerification handles:
+// POST /faculty/certificate/verify
+// This endpoint only triggers the existing mock ML verification and returns
+// a static response; no real ML integration is performed here.
+func (cc *CertificateController) TriggerMockVerification(c *gin.Context) {
+	if !cc.requireRole(c, "faculty", "hod") {
+		return
+	}
+
+	var payload struct {
+		CertificateID string `json:"certificate_id"`
+	}
+	if err := c.ShouldBindJSON(&payload); err != nil || strings.TrimSpace(payload.CertificateID) == "" {
+		_ = c.Error(utils.NewValidationError("certificate_id is required", err))
+		return
+	}
+
+	if err := cc.service.TriggerMockMLVerification(c.Request.Context(), payload.CertificateID); err != nil {
+		_ = c.Error(mapServiceError(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "mock ML verification triggered",
+	})
+}
+
 // Helpers --------------------------------------------------------------------
 
 func (cc *CertificateController) requireRole(c *gin.Context, allowedRoles ...string) bool {

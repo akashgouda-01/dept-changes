@@ -200,10 +200,10 @@ export default function HodDashboard() {
                         />
                       </div>
                       <div className="section-progress-meta">
-                        <span>Total: {section.total_certificates}</span>
-                        <span>Verified: {section.verified_count}</span>
-                        <span>Pending: {section.pending_count}</span>
-                        <span>Rejected: {section.rejected_count}</span>
+                        <span>Total: {section.total_certificates} </span>
+                        <span>Verified: {section.verified_count} </span>
+                        <span>Pending: {section.pending_count} </span>
+                        <span>Rejected: {section.rejected_count} </span>
                       </div>
                     </div>
                   );
