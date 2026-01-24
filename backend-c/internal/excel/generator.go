@@ -46,7 +46,6 @@ func BuildCertificatesWorkbook(certs []models.Certificate, sheetName string) ([]
 		}
 
 		setCell(1, cert.RegisterNumber)
-		setCell(2, cert.StudentName)
 		setCell(3, cert.Section)
 		setCell(4, cert.DriveLink)
 		setCell(5, cert.UploadedBy)

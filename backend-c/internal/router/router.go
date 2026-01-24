@@ -46,13 +46,18 @@ func New(healthService internalService.HealthService, dashboardService services.
 	certController := controllers.NewCertificateController(certService)
 
 	certificates := engine.Group("/certificates")
+	certificates.Use(middleware.MockAuthMiddleware("citchennai.net"))
 	{
 		certificates.POST("/upload", certController.UploadCertificates)
 		certificates.GET("/pending-review", certController.GetPendingReview)
 		certificates.POST("/review", certController.SubmitReview)
 	}
 
-	engine.POST("/faculty/certificate/verify", certController.TriggerMockVerification)
+	// Verify endpoint (Faculty/HOD)
+	engine.POST("/faculty/certificate/verify",
+		middleware.MockAuthMiddleware("citchennai.net"),
+		certController.TriggerMockVerification,
+	)
 
 	// HOD-facing endpoints
 	hodRepo := repositories.NewHodRepository(db)
@@ -60,6 +65,10 @@ func New(healthService internalService.HealthService, dashboardService services.
 	hodController := controllers.NewHodController(hodService)
 
 	hod := engine.Group("/hod")
+	hod.Use(
+		middleware.MockAuthMiddleware("citchennai.net"),
+		middleware.RequireRoles("HOD"),
+	)
 	{
 		hod.GET("/dashboard", hodController.HodDashboard)
 		hod.GET("/faculty/students", hodController.GetStudentStats)

@@ -87,7 +87,7 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="login-branding-footer">© 2024 EduVault. All rights reserved.</div>
+        <div className="login-branding-footer">© 2026 EduVault. All rights reserved.</div>
       </div>
 
       <div className="login-form-container">

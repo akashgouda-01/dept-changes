@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"net/http"
+	"department-eduvault-backend/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +17,7 @@ func RequireRoles(allowed ...string) gin.HandlerFunc {
 				return
 			}
 		}
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		_ = c.Error(utils.NewAuthorizationError("forbidden", nil))
+		c.Abort()
 	}
 }

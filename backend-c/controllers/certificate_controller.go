@@ -11,6 +11,7 @@ import (
 	"department-eduvault-backend/repositories"
 	"department-eduvault-backend/services"
 	"department-eduvault-backend/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -210,6 +211,9 @@ func mapServiceError(err error) *utils.AppError {
 		return utils.NewAuthorizationError(err.Error(), err)
 	case errors.Is(err, repositories.ErrCertificateNotFound):
 		return utils.NewNotFoundError(err.Error(), err)
+	case errors.Is(err, repositories.ErrStatsNotFound):
+		// Use 404 when stats not found, implying student/section not found for update
+		return utils.NewNotFoundError("related statistics record not found", err)
 	default:
 		return utils.NewInternalError("internal server error", err)
 	}

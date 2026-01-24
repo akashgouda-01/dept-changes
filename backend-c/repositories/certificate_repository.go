@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"department-eduvault-backend/models"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -87,9 +88,10 @@ func (r *certificateRepository) UpdateMLStatus(ctx context.Context, certificateI
 		updates := map[string]interface{}{
 			"ml_status": status,
 		}
-		if mlScore != nil {
-			updates["ml_score"] = mlScore
-		}
+		// ml_score column is missing in DB
+		// if mlScore != nil {
+		// 	updates["ml_score"] = mlScore
+		// }
 
 		if err := tx.Model(&cert).Updates(updates).Error; err != nil {
 			return fmt.Errorf("update ml status: %w", err)
@@ -135,7 +137,7 @@ func (r *certificateRepository) UpdateFacultyDecision(ctx context.Context, certi
 
 		if err := tx.Model(&cert).Updates(map[string]interface{}{
 			"faculty_status": status,
-			"is_legit":       isLegit,
+			// "is_legit":       isLegit, // Missing in DB
 		}).Error; err != nil {
 			return fmt.Errorf("update faculty decision: %w", err)
 		}
@@ -155,11 +157,11 @@ func (r *certificateRepository) incrementStats(ctx context.Context, tx *gorm.DB,
 	// Student statistics updates.
 	if err := tx.WithContext(ctx).
 		Model(&models.StudentStatistics{}).
-		Where("register_number = ?", cert.RegisterNumber).
+		Where("reg_no = ?", cert.RegisterNumber).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Updates(map[string]interface{}{
-			"total_certificates":   gorm.Expr("total_certificates + 1"),
-			"pending_certificates": gorm.Expr("pending_certificates + 1"),
+			"total_uploaded": gorm.Expr("total_uploaded + 1"),
+			// "pending_certificates": gorm.Expr("pending_certificates + 1"), // Missing
 		}).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrStatsNotFound
@@ -173,7 +175,7 @@ func (r *certificateRepository) incrementStats(ctx context.Context, tx *gorm.DB,
 		Where("section = ?", cert.Section).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Updates(map[string]interface{}{
-			"total_certificates": gorm.Expr("total_certificates + 1"),
+			"total_uploaded": gorm.Expr("total_uploaded + 1"),
 		}).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrStatsNotFound
@@ -184,56 +186,55 @@ func (r *certificateRepository) incrementStats(ctx context.Context, tx *gorm.DB,
 	return nil
 }
 
-func (r *certificateRepository) bumpMlVerified(ctx context.Context, tx *gorm.DB, cert models.Certificate) error {
-	return tx.WithContext(ctx).
-		Model(&models.StudentStatistics{}).
-		Where("register_number = ?", cert.RegisterNumber).
-		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Updates(map[string]interface{}{
-			"pending_certificates":     gorm.Expr("pending_certificates - 1"),
-			"ml_verified_certificates": gorm.Expr("ml_verified_certificates + 1"),
-		}).Error
+func (r *certificateRepository) bumpMlVerified(_ context.Context, _ *gorm.DB, _ models.Certificate) error {
+	// Columns pending_certificates and ml_verified_certificates are missing in DB.
+	// Skipping update.
+	return nil
 }
 
 func (r *certificateRepository) applyFacultyDecisionStats(ctx context.Context, tx *gorm.DB, cert models.Certificate, status models.FacultyStatus) error {
 	studentUpdates := map[string]interface{}{
-		"pending_certificates": gorm.Expr("pending_certificates - 1"),
+		// "pending_certificates": gorm.Expr("pending_certificates - 1"), // Missing
 	}
 	switch status {
 	case models.FacultyStatusLegit:
-		studentUpdates["legit_certificates"] = gorm.Expr("legit_certificates + 1")
+		studentUpdates["legit_count"] = gorm.Expr("legit_count + 1")
 	case models.FacultyStatusNotLegit:
-		studentUpdates["not_legit_certificates"] = gorm.Expr("not_legit_certificates + 1")
+		studentUpdates["not_legit_count"] = gorm.Expr("not_legit_count + 1")
 	}
 
-	if err := tx.WithContext(ctx).
-		Model(&models.StudentStatistics{}).
-		Where("register_number = ?", cert.RegisterNumber).
-		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Updates(studentUpdates).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrStatsNotFound
+	if len(studentUpdates) > 0 {
+		if err := tx.WithContext(ctx).
+			Model(&models.StudentStatistics{}).
+			Where("reg_no = ?", cert.RegisterNumber).
+			Clauses(clause.Locking{Strength: "UPDATE"}).
+			Updates(studentUpdates).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrStatsNotFound
+			}
+			return fmt.Errorf("update student statistics: %w", err)
 		}
-		return fmt.Errorf("update student statistics: %w", err)
 	}
 
 	sectionUpdates := map[string]interface{}{
-		"total_certificates": gorm.Expr("total_certificates"),
+		// "total_uploaded": gorm.Expr("total_uploaded"), // No change
 	}
 	switch status {
 	case models.FacultyStatusLegit:
-		sectionUpdates["legit_certificates"] = gorm.Expr("legit_certificates + 1")
+		sectionUpdates["legit_count"] = gorm.Expr("legit_count + 1")
 	}
 
-	if err := tx.WithContext(ctx).
-		Model(&models.SectionStatistics{}).
-		Where("section = ?", cert.Section).
-		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Updates(sectionUpdates).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrStatsNotFound
+	if len(sectionUpdates) > 0 {
+		if err := tx.WithContext(ctx).
+			Model(&models.SectionStatistics{}).
+			Where("section = ?", cert.Section).
+			Clauses(clause.Locking{Strength: "UPDATE"}).
+			Updates(sectionUpdates).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrStatsNotFound
+			}
+			return fmt.Errorf("update section statistics: %w", err)
 		}
-		return fmt.Errorf("update section statistics: %w", err)
 	}
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"department-eduvault-backend/models"
+
 	"gorm.io/gorm"
 )
 
@@ -44,17 +45,17 @@ func (r *hodRepository) GetStudentStatsByFaculty(ctx context.Context, facultyID 
 	var rows []StudentStatsRow
 	query := `
 		SELECT
-			register_number,
-			student_name,
-			section,
+			c.reg_no AS register_number,
+			CAST('' AS text) AS student_name,
+			c.section,
 			COUNT(*) AS total,
-			COUNT(*) FILTER (WHERE faculty_status = 'LEGIT') AS verified,
-			COUNT(*) FILTER (WHERE faculty_status = 'NOT_LEGIT') AS rejected,
-			COUNT(*) FILTER (WHERE faculty_status = 'PENDING') AS pending
-		FROM certificates
-		WHERE archived = false AND uploaded_by = ?
-		GROUP BY register_number, student_name, section
-		ORDER BY register_number;
+			COUNT(*) FILTER (WHERE c.faculty_status = 'LEGIT') AS verified,
+			COUNT(*) FILTER (WHERE c.faculty_status = 'NOT_LEGIT') AS rejected,
+			COUNT(*) FILTER (WHERE c.faculty_status = 'PENDING') AS pending
+		FROM certificates c
+		WHERE c.archived = false AND c.faculty_id = ?
+		GROUP BY c.reg_no, c.section
+		ORDER BY c.reg_no;
 	`
 
 	if err := r.db.WithContext(ctx).Raw(query, facultyID).Scan(&rows).Error; err != nil {
@@ -72,7 +73,7 @@ func (r *hodRepository) GetCertificatesByStudent(ctx context.Context, regNo stri
 
 	var certs []models.Certificate
 	if err := r.db.WithContext(ctx).
-		Where("register_number = ? AND archived = false", regNo).
+		Where("reg_no = ? AND archived = false", regNo).
 		Order("uploaded_at DESC").
 		Find(&certs).Error; err != nil {
 		return nil, fmt.Errorf("query certificates by student: %w", err)
