@@ -53,7 +53,7 @@ func (r *dashboardRepository) GetOverview(ctx context.Context) (DashboardOvervie
 			COALESCE(COUNT(*), 0) AS total_certificates,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'LEGIT' THEN 1 END), 0) AS verified_count,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 END), 0) AS rejected_count,
-			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' THEN 1 END), 0) AS pending_count
+			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' AND ml_status = 'VERIFIED' THEN 1 END), 0) AS pending_count
 		FROM certificates
 		WHERE archived = false;
 	`
@@ -80,7 +80,7 @@ func (r *dashboardRepository) GetSectionStats(ctx context.Context) ([]SectionDas
 			COALESCE(COUNT(*), 0) AS total_certificates,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'LEGIT' THEN 1 END), 0) AS verified_certificates,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 END), 0) AS rejected_certificates,
-			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' THEN 1 END), 0) AS pending_certificates
+			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' AND ml_status = 'VERIFIED' THEN 1 END), 0) AS pending_certificates
 		FROM certificates
 		WHERE archived = false
 		GROUP BY section

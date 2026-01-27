@@ -6,9 +6,9 @@ import { User, Mail, BadgeCheck, Building2, Users, Plus, Pencil, Trash2, Search 
 import { Student } from '@/types';
 
 const initialStudents: Student[] = [
-  { id: '1', registerNumber: 'RA2211003010', name: 'John Doe', email: 'john@ctchennai.net', section: 'A', semester: 5, isPresent: true },
-  { id: '2', registerNumber: 'RA2211003015', name: 'Jane Smith', email: 'jane@ctchennai.net', section: 'A', semester: 5, isPresent: true },
-  { id: '3', registerNumber: 'RA2211003022', name: 'Mike Wilson', email: 'mike@ctchennai.net', section: 'B', semester: 5, isPresent: false },
+  { id: '1', registerNumber: '24CS0001', name: 'John Doe', email: 'john@citchennai.net', section: 'A', semester: 5, isPresent: true },
+  { id: '2', registerNumber: '24CS0002', name: 'Jane Smith', email: 'jane@citchennai.net', section: 'A', semester: 5, isPresent: true },
+  { id: '3', registerNumber: '24CS0003', name: 'Mike Wilson', email: 'mike@citchennai.net', section: 'B', semester: 5, isPresent: false },
 ];
 
 export default function FacultyProfile() {

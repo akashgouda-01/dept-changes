@@ -114,7 +114,7 @@ func (r *certificateRepository) GetCertificatesPendingFacultyReview(ctx context.
 	}
 	var certs []models.Certificate
 	err := r.db.WithContext(ctx).
-		Where("ml_status = ? AND faculty_status = ?", models.MLStatusVerified, models.FacultyStatusPending).
+		Where("ml_status = ? AND faculty_status = ? AND archived = ?", models.MLStatusVerified, models.FacultyStatusPending, false).
 		Order("uploaded_at ASC").
 		Limit(limit).
 		Find(&certs).Error

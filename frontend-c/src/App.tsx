@@ -7,6 +7,8 @@ import FacultyDashboard from "@/pages/faculty/FacultyDashboard";
 import CertificateVerification from "@/pages/faculty/CertificateVerification";
 import FacultyProfile from "@/pages/faculty/FacultyProfile";
 import HodDashboard from "@/pages/hod/HodDashboard";
+import HodFacultyStats from "@/pages/hod/HodFacultyStats";
+import HodStudentCertificates from "@/pages/hod/HodStudentCertificates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,8 @@ const App = () => (
             <Route path="/faculty/certificates" element={<CertificateVerification />} />
             <Route path="/faculty/profile" element={<FacultyProfile />} />
             <Route path="/hod/dashboard" element={<HodDashboard />} />
+            <Route path="/hod/faculty-stats" element={<HodFacultyStats />} />
+            <Route path="/hod/student/:regNo" element={<HodStudentCertificates />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

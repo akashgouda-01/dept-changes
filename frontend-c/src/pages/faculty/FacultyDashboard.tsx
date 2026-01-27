@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, FileCheck, Clock, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { getDashboardOverview, getDashboardSections } from '@/lib/api';
 
 interface DashboardOverview {
+
   total_students: number;
   total_certificates: number;
   verified_count: number;
@@ -35,39 +37,23 @@ export default function FacultyDashboard() {
 
     const loadDashboard = async () => {
       try {
-        if (!API_BASE_URL) {
-          throw new Error('VITE_API_BASE_URL is not configured');
-        }
-
         setIsLoading(true);
         setError(null);
 
         const [overviewRes, sectionsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/dashboard/overview`),
-          fetch(`${API_BASE_URL}/dashboard/sections`),
+          getDashboardOverview(),
+          getDashboardSections(),
         ]);
 
-        if (!overviewRes.ok) {
-          throw new Error(`Overview request failed with status ${overviewRes.status}`);
-        }
-        if (!sectionsRes.ok) {
-          throw new Error(`Sections request failed with status ${sectionsRes.status}`);
-        }
-
-        const overviewJson = await overviewRes.json();
-        const sectionsJson = await sectionsRes.json();
-
-        if (!overviewJson.success) {
-          throw new Error(overviewJson.error?.message || 'Failed to load dashboard overview');
-        }
-        if (!sectionsJson.success) {
-          throw new Error(sectionsJson.error?.message || 'Failed to load section statistics');
-        }
-
         if (isMounted) {
-          setOverview(overviewJson.data as DashboardOverview);
-          setSections(Array.isArray(sectionsJson.data) ? (sectionsJson.data as SectionStat[]) : []);
+          if (overviewRes.success) {
+            setOverview(overviewRes.data as DashboardOverview);
+          }
+          if (sectionsRes.success) {
+            setSections(Array.isArray(sectionsRes.data) ? (sectionsRes.data as SectionStat[]) : []);
+          }
         }
+
       } catch (err) {
         console.error(err);
         if (isMounted) {
@@ -123,48 +109,48 @@ export default function FacultyDashboard() {
             }</p>
           </div>
         ) : (
-        <div className="stats-grid">
-          <div className="stat-card stat-card-primary">
-            <div className="stat-card-content">
-              <div className="stat-card-info">
-                <p className="stat-card-title">Total Students</p>
-                <p className="stat-card-value">{totalStudents}</p>
-                <p className="stat-card-subtitle">Across all sections</p>
+          <div className="stats-grid">
+            <div className="stat-card stat-card-primary">
+              <div className="stat-card-content">
+                <div className="stat-card-info">
+                  <p className="stat-card-title">Total Students</p>
+                  <p className="stat-card-value">{totalStudents}</p>
+                  <p className="stat-card-subtitle">Across all sections</p>
+                </div>
+                <div className="stat-card-icon"><Users /></div>
               </div>
-              <div className="stat-card-icon"><Users /></div>
+            </div>
+            <div className="stat-card stat-card-warning">
+              <div className="stat-card-content">
+                <div className="stat-card-info">
+                  <p className="stat-card-title">Total Certificates</p>
+                  <p className="stat-card-value">{totalCertificates}</p>
+                  <p className="stat-card-subtitle">{pending} pending review</p>
+                </div>
+                <div className="stat-card-icon"><FileCheck /></div>
+              </div>
+            </div>
+            <div className="stat-card stat-card-success">
+              <div className="stat-card-content">
+                <div className="stat-card-info">
+                  <p className="stat-card-title">Verified</p>
+                  <p className="stat-card-value">{verified}</p>
+                  <p className="stat-card-subtitle">{verificationPercentage}% verification rate</p>
+                </div>
+                <div className="stat-card-icon"><CheckCircle2 /></div>
+              </div>
+            </div>
+            <div className="stat-card stat-card-destructive">
+              <div className="stat-card-content">
+                <div className="stat-card-info">
+                  <p className="stat-card-title">Rejected</p>
+                  <p className="stat-card-value">{rejected}</p>
+                  <p className="stat-card-subtitle">Requires resubmission</p>
+                </div>
+                <div className="stat-card-icon"><XCircle /></div>
+              </div>
             </div>
           </div>
-          <div className="stat-card stat-card-warning">
-            <div className="stat-card-content">
-              <div className="stat-card-info">
-                <p className="stat-card-title">Total Certificates</p>
-                <p className="stat-card-value">{totalCertificates}</p>
-                <p className="stat-card-subtitle">{pending} pending review</p>
-              </div>
-              <div className="stat-card-icon"><FileCheck /></div>
-            </div>
-          </div>
-          <div className="stat-card stat-card-success">
-            <div className="stat-card-content">
-              <div className="stat-card-info">
-                <p className="stat-card-title">Verified</p>
-                <p className="stat-card-value">{verified}</p>
-                <p className="stat-card-subtitle">{verificationPercentage}% verification rate</p>
-              </div>
-              <div className="stat-card-icon"><CheckCircle2 /></div>
-            </div>
-          </div>
-          <div className="stat-card stat-card-destructive">
-            <div className="stat-card-content">
-              <div className="stat-card-info">
-                <p className="stat-card-title">Rejected</p>
-                <p className="stat-card-value">{rejected}</p>
-                <p className="stat-card-subtitle">Requires resubmission</p>
-              </div>
-              <div className="stat-card-icon"><XCircle /></div>
-            </div>
-          </div>
-        </div>
         )}
 
         {/* Section-wise and recent activity UI kept, but no mock numbers; will be wired to real APIs later */}
@@ -184,8 +170,8 @@ export default function FacultyDashboard() {
                   const sectionVerified =
                     section.total_certificates > 0
                       ? Math.round(
-                          (section.verified_count / section.total_certificates) * 100,
-                        )
+                        (section.verified_count / section.total_certificates) * 100,
+                      )
                       : 0;
                   return (
                     <div key={section.section} className="section-progress-item">
