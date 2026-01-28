@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: email.split('@')[0],
       email: email,
       role: role,
-      staffId: role === 'hod' ? 'HOD-01' : 'FAC-01',
+      staffId: role === 'hod' ? 'HOD01' : 'FAC01',
       position: role === 'hod' ? 'Head of Department' : 'Assistant Professor',
       department: 'Computer Science & Engineering',
       assignedSections: role === 'faculty' ? ['A', 'B'] : undefined,

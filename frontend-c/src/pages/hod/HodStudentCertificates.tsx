@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useToast } from '@/contexts/ToastContext';
 import { Download, Cpu, ShieldCheck, Eye, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import { getStudentCertificates, exportCertificatesByStudent } from '@/lib/api';
+import { getStudentCertificates, exportCertificatesByStudent } from '@/api';
 import { Certificate } from '@/types';
 
 export default function HodStudentCertificates() {

@@ -4,7 +4,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Upload, Link as LinkIcon, Plus, Trash2, CheckCircle2, XCircle, Clock, Download, Eye, Cpu, ShieldCheck, User } from 'lucide-react';
 import { Certificate, UploadCertificatePayload } from '@/types';
-import { uploadCertificates, getPendingReviewCertificates, submitReview } from '@/lib/api';
+import { uploadCertificates, getPendingReviewCertificates, submitReview } from '@/api';
 
 interface CertificateEntry {
   id: string;
@@ -130,7 +130,7 @@ export default function CertificateVerification() {
                 <div className="upload-field">
                   <span className="upload-field-label">Register Number</span>
                   <input placeholder="24CS0001" value={entry.registerNumber} onChange={(e) => updateEntry(entry.id, 'registerNumber', e.target.value)} className="input font-mono" />
-                </div>  
+                </div>
 
                 <div className="upload-field">
                   <span className="upload-field-label">Section</span>

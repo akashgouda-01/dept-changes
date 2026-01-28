@@ -3,25 +3,8 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Modal } from '@/components/ui/Modal';
 import { Users, FileCheck, TrendingUp, Download, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import { getDashboardOverview, getDashboardSections } from '@/lib/api';
+import { getDashboardOverview, getDashboardSections, DashboardOverview, SectionStat } from '@/api';
 import { useNavigate } from 'react-router-dom';
-
-interface DashboardOverview {
-  total_students: number;
-  total_certificates: number;
-  verified_count: number;
-  rejected_count: number;
-  pending_count: number;
-}
-
-interface SectionStat {
-  section: string;
-  total_certificates: number;
-  verified_count: number;
-  rejected_count: number;
-  pending_count: number;
-  verification_rate: number;
-}
 
 export default function HodDashboard() {
   const { user } = useAuth();

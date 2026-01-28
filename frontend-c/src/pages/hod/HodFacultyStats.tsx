@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useToast } from '@/contexts/ToastContext';
 import { Search, Users, ChevronRight, Download } from 'lucide-react';
-import { getStudentStats } from '@/lib/api';
+import { getStudentStats } from '@/api';
 import { StudentStats } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -50,7 +50,7 @@ export default function HodFacultyStats() {
                                 <Search className="w-4 h-4" />
                                 <input
                                     id="facultyId"
-                                    placeholder="e.g. FAC-01"
+                                    placeholder="e.g. FAC01"
                                     value={facultyId}
                                     onChange={(e) => setFacultyId(e.target.value)}
                                     className="input input-with-icon"

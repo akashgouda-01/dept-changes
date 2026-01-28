@@ -2,28 +2,7 @@ import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, FileCheck, Clock, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
-import { getDashboardOverview, getDashboardSections } from '@/lib/api';
-
-interface DashboardOverview {
-
-  total_students: number;
-  total_certificates: number;
-  verified_count: number;
-  rejected_count: number;
-  pending_count: number;
-}
-
-interface SectionStat {
-  section: string;
-  total_certificates: number;
-  verified_count: number;
-  rejected_count: number;
-  pending_count: number;
-  verification_rate: number;
-}
-
-// Prefer env; fall back to local backend default to avoid blank UI when env is missing locally.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+import { getDashboardOverview, getDashboardSections, DashboardOverview, SectionStat } from '@/api';
 
 export default function FacultyDashboard() {
   const { user } = useAuth();
