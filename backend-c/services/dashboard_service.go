@@ -24,8 +24,8 @@ type SectionStatsDTO struct {
 }
 
 type DashboardService interface {
-	GetOverview(ctx context.Context) (DashboardOverviewDTO, error)
-	GetSectionStats(ctx context.Context) ([]SectionStatsDTO, error)
+	GetOverview(ctx context.Context, role, facultyID string) (DashboardOverviewDTO, error)
+	GetSectionStats(ctx context.Context, role, facultyID string) ([]SectionStatsDTO, error)
 }
 
 type dashboardService struct {
@@ -36,8 +36,18 @@ func NewDashboardService(repo repositories.DashboardRepository) DashboardService
 	return &dashboardService{repo: repo}
 }
 
-func (s *dashboardService) GetOverview(ctx context.Context) (DashboardOverviewDTO, error) {
-	ov, err := s.repo.GetOverview(ctx)
+func (s *dashboardService) GetOverview(ctx context.Context, role, facultyID string) (DashboardOverviewDTO, error) {
+	// If Role is HOD, we fetch all.
+	// If Role is Faculty, we fetch only for their facultyID.
+	var ov repositories.DashboardOverview
+	var err error
+
+	if role == "hod" {
+		ov, err = s.repo.GetOverview(ctx, "") // empty means all
+	} else {
+		ov, err = s.repo.GetOverview(ctx, facultyID)
+	}
+
 	if err != nil {
 		return DashboardOverviewDTO{}, err
 	}
@@ -50,8 +60,16 @@ func (s *dashboardService) GetOverview(ctx context.Context) (DashboardOverviewDT
 	}, nil
 }
 
-func (s *dashboardService) GetSectionStats(ctx context.Context) ([]SectionStatsDTO, error) {
-	rows, err := s.repo.GetSectionStats(ctx)
+func (s *dashboardService) GetSectionStats(ctx context.Context, role, facultyID string) ([]SectionStatsDTO, error) {
+	var rows []repositories.SectionDashboardRow
+	var err error
+
+	if role == "hod" {
+		rows, err = s.repo.GetSectionStats(ctx, "")
+	} else {
+		rows, err = s.repo.GetSectionStats(ctx, facultyID)
+	}
+
 	if err != nil {
 		return nil, err
 	}

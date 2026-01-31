@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -23,8 +24,8 @@ type SectionDashboardRow struct {
 }
 
 type DashboardRepository interface {
-	GetOverview(ctx context.Context) (DashboardOverview, error)
-	GetSectionStats(ctx context.Context) ([]SectionDashboardRow, error)
+	GetOverview(ctx context.Context, facultyID string) (DashboardOverview, error)
+	GetSectionStats(ctx context.Context, facultyID string) ([]SectionDashboardRow, error)
 }
 
 type dashboardRepository struct {
@@ -35,8 +36,8 @@ func NewDashboardRepository(db *gorm.DB) DashboardRepository {
 	return &dashboardRepository{db: db}
 }
 
-func (r *dashboardRepository) GetOverview(ctx context.Context) (DashboardOverview, error) {
-	// Aggregate solely from certificates table using COUNT + CASE expressions.
+func (r *dashboardRepository) GetOverview(ctx context.Context, facultyID string) (DashboardOverview, error) {
+	// Aggregate from certificates table.
 	type aggRow struct {
 		TotalStudents     int64
 		TotalCertificates int64
@@ -46,6 +47,7 @@ func (r *dashboardRepository) GetOverview(ctx context.Context) (DashboardOvervie
 	}
 
 	var row aggRow
+	args := []interface{}{}
 
 	query := `
 		SELECT
@@ -55,12 +57,25 @@ func (r *dashboardRepository) GetOverview(ctx context.Context) (DashboardOvervie
 			COALESCE(COUNT(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 END), 0) AS rejected_count,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' AND ml_status = 'VERIFIED' THEN 1 END), 0) AS pending_count
 		FROM certificates
-		WHERE archived = false;
+		WHERE archived = false
 	`
 
-	if err := r.db.WithContext(ctx).Raw(query).Scan(&row).Error; err != nil {
+	if facultyID != "" {
+		// As per instructions, filtered by faculty_id
+		query += " AND faculty_id = ?"
+		args = append(args, facultyID)
+	}
+
+	query += ";"
+
+	fmt.Printf("[REPO] Query=%s, Args=%v\n", query, args)
+
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&row).Error; err != nil {
 		return DashboardOverview{}, err
 	}
+
+	fmt.Printf("[REPO] Result: TotalStudents=%d, TotalCerts=%d, Verified=%d, Rejected=%d, Pending=%d\n",
+		row.TotalStudents, row.TotalCertificates, row.VerifiedCount, row.RejectedCount, row.PendingCount)
 
 	return DashboardOverview{
 		TotalStudents:        row.TotalStudents,
@@ -71,8 +86,9 @@ func (r *dashboardRepository) GetOverview(ctx context.Context) (DashboardOvervie
 	}, nil
 }
 
-func (r *dashboardRepository) GetSectionStats(ctx context.Context) ([]SectionDashboardRow, error) {
+func (r *dashboardRepository) GetSectionStats(ctx context.Context, facultyID string) ([]SectionDashboardRow, error) {
 	var rows []SectionDashboardRow
+	args := []interface{}{}
 
 	query := `
 		SELECT
@@ -83,11 +99,16 @@ func (r *dashboardRepository) GetSectionStats(ctx context.Context) ([]SectionDas
 			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' AND ml_status = 'VERIFIED' THEN 1 END), 0) AS pending_certificates
 		FROM certificates
 		WHERE archived = false
-		GROUP BY section
-		ORDER BY section;
 	`
 
-	if err := r.db.WithContext(ctx).Raw(query).Scan(&rows).Error; err != nil {
+	if facultyID != "" {
+		query += " AND faculty_id = ?"
+		args = append(args, facultyID)
+	}
+
+	query += " GROUP BY section ORDER BY section;"
+
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 

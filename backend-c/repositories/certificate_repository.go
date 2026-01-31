@@ -25,7 +25,7 @@ type CertificateRepository interface {
 	GetByID(ctx context.Context, certificateID string) (*models.Certificate, error)
 	CreateCertificates(ctx context.Context, certs []models.Certificate) error
 	UpdateMLStatus(ctx context.Context, certificateID string, status models.MLStatus, mlScore *float64) error
-	GetCertificatesPendingFacultyReview(ctx context.Context, limit int) ([]models.Certificate, error)
+	GetCertificatesPendingFacultyReview(ctx context.Context, limit int, facultyID string) ([]models.Certificate, error)
 	UpdateFacultyDecision(ctx context.Context, certificateID string, status models.FacultyStatus, isLegit bool) error
 }
 
@@ -108,14 +108,19 @@ func (r *certificateRepository) UpdateMLStatus(ctx context.Context, certificateI
 }
 
 // GetCertificatesPendingFacultyReview returns ML-verified certificates awaiting faculty decision.
-func (r *certificateRepository) GetCertificatesPendingFacultyReview(ctx context.Context, limit int) ([]models.Certificate, error) {
+func (r *certificateRepository) GetCertificatesPendingFacultyReview(ctx context.Context, limit int, facultyID string) ([]models.Certificate, error) {
 	if limit <= 0 {
 		limit = 50
 	}
 	var certs []models.Certificate
-	err := r.db.WithContext(ctx).
-		Where("ml_status = ? AND faculty_status = ? AND archived = ?", models.MLStatusVerified, models.FacultyStatusPending, false).
-		Order("uploaded_at ASC").
+	query := r.db.WithContext(ctx).
+		Where("ml_status = ? AND faculty_status = ? AND archived = ?", models.MLStatusVerified, models.FacultyStatusPending, false)
+
+	if facultyID != "" {
+		query = query.Where("faculty_id = ?", facultyID)
+	}
+
+	err := query.Order("uploaded_at ASC").
 		Limit(limit).
 		Find(&certs).Error
 	if err != nil {

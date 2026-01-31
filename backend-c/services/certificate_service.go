@@ -34,7 +34,7 @@ type CertificateInput struct {
 type CertificateService interface {
 	UploadCertificates(ctx context.Context, inputs []CertificateInput) error
 	TriggerMockMLVerification(ctx context.Context, certificateID string) error
-	GetPendingFacultyReview(ctx context.Context, limit int) ([]models.Certificate, error)
+	GetPendingFacultyReview(ctx context.Context, limit int, facultyID string) ([]models.Certificate, error)
 	SubmitFacultyDecision(ctx context.Context, certificateID string, status models.FacultyStatus, isLegit bool) error
 }
 
@@ -109,8 +109,8 @@ func (s *certificateService) TriggerMockMLVerification(ctx context.Context, cert
 }
 
 // GetPendingFacultyReview fetches ML-verified certificates pending faculty action.
-func (s *certificateService) GetPendingFacultyReview(ctx context.Context, limit int) ([]models.Certificate, error) {
-	return s.repo.GetCertificatesPendingFacultyReview(ctx, limit)
+func (s *certificateService) GetPendingFacultyReview(ctx context.Context, limit int, facultyID string) ([]models.Certificate, error) {
+	return s.repo.GetCertificatesPendingFacultyReview(ctx, limit, facultyID)
 }
 
 // SubmitFacultyDecision records a faculty decision with state validation.

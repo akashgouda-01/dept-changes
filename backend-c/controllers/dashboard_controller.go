@@ -3,6 +3,8 @@ package controllers
 import (
 	"department-eduvault-backend/services"
 	"department-eduvault-backend/utils"
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,7 +19,12 @@ func NewDashboardController(service services.DashboardService) *DashboardControl
 
 // GetOverview handles GET /dashboard/overview
 func (dc *DashboardController) GetOverview(c *gin.Context) {
-	overview, err := dc.service.GetOverview(c.Request.Context())
+	role := c.GetString("role")
+	facultyID := c.GetString("faculty_id")
+
+	fmt.Printf("[DASHBOARD] Role=%s, FacultyID=%s\n", role, facultyID)
+
+	overview, err := dc.service.GetOverview(c.Request.Context(), role, facultyID)
 	if err != nil {
 		_ = c.Error(utils.NewDatabaseError("failed to load dashboard overview", err))
 		return
@@ -30,7 +37,10 @@ func (dc *DashboardController) GetOverview(c *gin.Context) {
 
 // GetSections handles GET /dashboard/sections
 func (dc *DashboardController) GetSections(c *gin.Context) {
-	sections, err := dc.service.GetSectionStats(c.Request.Context())
+	role := c.GetString("role")
+	facultyID := c.GetString("faculty_id")
+
+	sections, err := dc.service.GetSectionStats(c.Request.Context(), role, facultyID)
 	if err != nil {
 		_ = c.Error(utils.NewDatabaseError("failed to load section statistics", err))
 		return

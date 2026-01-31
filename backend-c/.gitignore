@@ -1,5 +1,8 @@
 .env
+.env.local
+.env.example
 node_modules
+debug.log
 
 debug_500_light.ps1
 debug_500_v2.ps1
@@ -16,3 +19,6 @@ server_final_v4.log
 server_verify.log
 
 types.txt
+
+faculty1_responses.json
+faculty2_responses.json

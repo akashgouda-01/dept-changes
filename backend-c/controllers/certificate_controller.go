@@ -86,7 +86,13 @@ func (cc *CertificateController) GetPendingReview(c *gin.Context) {
 		limit = parsed
 	}
 
-	certs, err := cc.service.GetPendingFacultyReview(c.Request.Context(), limit)
+	role := c.GetString("role")
+	facultyID := ""
+	if role == "faculty" {
+		facultyID = c.GetString("faculty_id")
+	}
+
+	certs, err := cc.service.GetPendingFacultyReview(c.Request.Context(), limit, facultyID)
 	if err != nil {
 		_ = c.Error(mapServiceError(err))
 		return
