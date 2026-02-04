@@ -26,16 +26,17 @@ type Certificate struct {
 	DriveLink      string        `gorm:"column:drive_link;type:text;not null"`
 	RegisterNumber string        `gorm:"column:reg_no;type:text;not null"`
 	Section        string        `gorm:"column:section;type:text;not null"`
-	StudentName    string        `gorm:"column:student_name;type:text;not null"`	
+	StudentName    string        `gorm:"column:student_name;type:text;not null"`
 	UploadedBy     string        `gorm:"column:faculty_id;type:text;not null"`
 	UploadedAt     time.Time     `gorm:"column:uploaded_at;type:timestamp with time zone;not null"`
 	MLStatus       MLStatus      `gorm:"column:ml_status;type:ml_status_enum;default:'PENDING';not null"`
 	FacultyStatus  FacultyStatus `gorm:"column:faculty_status;type:faculty_status_enum;default:'PENDING';not null"`
-	IsLegit        *bool         `gorm:"-"` // Missing in DB
-	MLScore        *float64      `gorm:"-"` // Missing in DB
-	Archived       bool          `gorm:"column:archived;type:boolean;default:false;not null"`
+	// Updated to map to DB columns
+	IsLegit  *bool    `gorm:"column:is_legit;type:boolean"`
+	MLScore  *float64 `gorm:"column:ml_score;type:double precision"`
+	Archived bool     `gorm:"column:archived;type:boolean;default:false;not null"`
 }
 
 func (Certificate) TableName() string {
-	return "certificates"
+	return "faculty_certificates"
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"department-eduvault-backend/models"
 
@@ -88,10 +89,9 @@ func (r *certificateRepository) UpdateMLStatus(ctx context.Context, certificateI
 		updates := map[string]interface{}{
 			"ml_status": status,
 		}
-		// ml_score column is missing in DB
-		// if mlScore != nil {
-		// 	updates["ml_score"] = mlScore
-		// }
+		if mlScore != nil {
+			updates["ml_score"] = mlScore
+		}
 
 		if err := tx.Model(&cert).Updates(updates).Error; err != nil {
 			return fmt.Errorf("update ml status: %w", err)
@@ -142,7 +142,7 @@ func (r *certificateRepository) UpdateFacultyDecision(ctx context.Context, certi
 
 		if err := tx.Model(&cert).Updates(map[string]interface{}{
 			"faculty_status": status,
-			// "is_legit":       isLegit, // Missing in DB
+			"is_legit":       isLegit,
 		}).Error; err != nil {
 			return fmt.Errorf("update faculty decision: %w", err)
 		}
@@ -159,47 +159,63 @@ func (r *certificateRepository) UpdateFacultyDecision(ctx context.Context, certi
 
 // incrementStats bumps per-student and per-section totals for new certificates.
 func (r *certificateRepository) incrementStats(ctx context.Context, tx *gorm.DB, cert models.Certificate) error {
-	// Student statistics updates.
+	// Student statistics upsert.
+	// We use ON CONFLICT to either create a new record or increment existing counters.
+	if err := tx.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "reg_no"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"total_uploaded":       gorm.Expr("student_statistics.total_uploaded + 1"),
+			"pending_certificates": gorm.Expr("student_statistics.pending_certificates + 1"),
+			"last_updated":         gorm.Expr("NOW()"),
+		}),
+	}).Create(&models.StudentStatistics{
+		RegisterNumber:      cert.RegisterNumber,
+		StudentName:         cert.StudentName,
+		Section:             cert.Section,
+		TotalCertificates:   1,
+		PendingCertificates: 1,
+		UpdatedAt:           time.Now(),
+	}).Error; err != nil {
+		return fmt.Errorf("upsert student statistics: %w", err)
+	}
+
+	// Section statistics upsert.
+	if err := tx.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "section"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"total_uploaded": gorm.Expr("section_statistics.total_uploaded + 1"),
+			"last_updated":   gorm.Expr("NOW()"),
+		}),
+	}).Create(&models.SectionStatistics{
+		Section:           cert.Section,
+		TotalCertificates: 1,
+		UpdatedAt:         time.Now(),
+	}).Error; err != nil {
+		return fmt.Errorf("upsert section statistics: %w", err)
+	}
+
+	return nil
+}
+
+func (r *certificateRepository) bumpMlVerified(ctx context.Context, tx *gorm.DB, cert models.Certificate) error {
+	// Decrement pending and increment ml_verified
 	if err := tx.WithContext(ctx).
 		Model(&models.StudentStatistics{}).
 		Where("reg_no = ?", cert.RegisterNumber).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Updates(map[string]interface{}{
-			"total_uploaded": gorm.Expr("total_uploaded + 1"),
-			// "pending_certificates": gorm.Expr("pending_certificates + 1"), // Missing
+			"pending_certificates":     gorm.Expr("pending_certificates - 1"),
+			"ml_verified_certificates": gorm.Expr("ml_verified_certificates + 1"),
+			"last_updated":             gorm.Expr("NOW()"),
 		}).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrStatsNotFound
-		}
-		return fmt.Errorf("update student statistics: %w", err)
+		return fmt.Errorf("update student stats (ml verified): %w", err)
 	}
-
-	// Section statistics updates.
-	if err := tx.WithContext(ctx).
-		Model(&models.SectionStatistics{}).
-		Where("section = ?", cert.Section).
-		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Updates(map[string]interface{}{
-			"total_uploaded": gorm.Expr("total_uploaded + 1"),
-		}).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrStatsNotFound
-		}
-		return fmt.Errorf("update section statistics: %w", err)
-	}
-
-	return nil
-}
-
-func (r *certificateRepository) bumpMlVerified(_ context.Context, _ *gorm.DB, _ models.Certificate) error {
-	// Columns pending_certificates and ml_verified_certificates are missing in DB.
-	// Skipping update.
 	return nil
 }
 
 func (r *certificateRepository) applyFacultyDecisionStats(ctx context.Context, tx *gorm.DB, cert models.Certificate, status models.FacultyStatus) error {
 	studentUpdates := map[string]interface{}{
-		// "pending_certificates": gorm.Expr("pending_certificates - 1"), // Missing
+		"ml_verified_certificates": gorm.Expr("ml_verified_certificates - 1"),
 	}
 	switch status {
 	case models.FacultyStatusLegit:

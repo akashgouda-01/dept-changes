@@ -21,7 +21,7 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedRole) {
       toast({ title: 'Select Role', description: 'Please select your role to continue.', variant: 'destructive' });
       return;
@@ -34,7 +34,7 @@ export default function Login() {
 
     setIsSubmitting(true);
     const { error } = signIn(email, selectedRole);
-    
+
     if (error) {
       toast({ title: 'Sign In Failed', description: error.message, variant: 'destructive' });
       setIsSubmitting(false);
@@ -57,7 +57,7 @@ export default function Login() {
           <div className="login-branding-shape login-branding-shape-2" />
           <div className="login-branding-shape login-branding-shape-3" />
         </div>
-        
+
         <div className="login-branding-header">
           <div className="login-branding-logo">
             <div className="login-branding-logo-icon"><Shield /></div>
@@ -131,6 +131,15 @@ export default function Login() {
               {isSubmitting && <Loader2 className="spinner" style={{ width: '1.25rem', height: '1.25rem' }} />}
               Sign In
             </button>
+
+            <div className="login-form-footer-helpers" style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
+              <p>Demo Logins:</p>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                <button type="button" onClick={() => { setSelectedRole('faculty'); setEmail('faculty1@citchennai.net'); }} className="badge badge-outline" style={{ cursor: 'pointer' }}>Faculty 1 (A-F)</button>
+                <button type="button" onClick={() => { setSelectedRole('faculty'); setEmail('faculty2@citchennai.net'); }} className="badge badge-outline" style={{ cursor: 'pointer' }}>Faculty 2 (G-L)</button>
+                <button type="button" onClick={() => { setSelectedRole('faculty'); setEmail('faculty3@citchennai.net'); }} className="badge badge-outline" style={{ cursor: 'pointer' }}>Faculty 3 (M-Q)</button>
+              </div>
+            </div>
 
             <p className="login-email-hint">Only @citchennai.net emails are allowed</p>
           </form>

@@ -40,15 +40,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: new Error('Only @citchennai.net email addresses are allowed') };
     }
 
+    let assignedSections: string[] | undefined;
+    let staffId = role === 'hod' ? 'HOD01' : 'FAC01';
+
+    if (role === 'faculty') {
+      const prefix = email.split('@')[0].toLowerCase();
+      if (prefix === 'faculty1') {
+        assignedSections = ['A', 'B', 'C', 'D', 'E', 'F'];
+        staffId = 'FAC01';
+      } else if (prefix === 'faculty2') {
+        assignedSections = ['G', 'H', 'I', 'J', 'K', 'L'];
+        staffId = 'FAC02';
+      } else if (prefix === 'faculty3') {
+        assignedSections = ['M', 'N', 'O', 'P', 'Q'];
+        staffId = 'FAC03';
+      } else {
+        assignedSections = ['A', 'B']; // Fallback
+      }
+    }
+
     const authUser: AuthUser = {
       id: crypto.randomUUID(),
       name: email.split('@')[0],
       email: email,
       role: role,
-      staffId: role === 'hod' ? 'HOD01' : 'FAC01',
+      staffId: staffId,
       position: role === 'hod' ? 'Head of Department' : 'Assistant Professor',
       department: 'Computer Science & Engineering',
-      assignedSections: role === 'faculty' ? ['A', 'B'] : undefined,
+      assignedSections,
     };
 
     localStorage.setItem('eduvault_user', JSON.stringify(authUser));

@@ -134,7 +134,12 @@ export default function CertificateVerification() {
 
                 <div className="upload-field">
                   <span className="upload-field-label">Section</span>
-                  <select value={entry.section} onChange={(e) => updateEntry(entry.id, 'section', e.target.value)} className="input"><option value="">Select</option><option value="A">Section A</option><option value="B">Section B</option></select>
+                  <select value={entry.section} onChange={(e) => updateEntry(entry.id, 'section', e.target.value)} className="input">
+                    <option value="">Select</option>
+                    {user?.assignedSections?.map((section) => (
+                      <option key={section} value={section}>Section {section}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="upload-field" style={{ flex: 2 }}>

@@ -11,6 +11,7 @@ import (
 	"department-eduvault-backend/internal/router"
 	"department-eduvault-backend/internal/server"
 	internalService "department-eduvault-backend/internal/service"
+	"department-eduvault-backend/models"
 	"department-eduvault-backend/repositories"
 	"department-eduvault-backend/services"
 	"department-eduvault-backend/utils"
@@ -44,6 +45,25 @@ func main() {
 	}
 
 	logger.Info("database connection established and ping successful")
+
+	// Ensure ENUM types exist (idempotent-ish via exception handling in migration or ignored if error)
+	// Note: basic Exec might fail if type exists, so we ignore error or use DO block.
+	// Since we can't easily do complex blocks here without clutter, we'll try a simple create.
+	// A better way is to rely on Gorm or Pre-migration.
+	// Let's assume the user might restart often, so we wrap in DO block for safety if possible?
+	// Go's Gorm Exec:
+	database.Exec("DO $$ BEGIN CREATE TYPE ml_status_enum AS ENUM ('PENDING', 'VERIFIED', 'DUPLICATE'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
+	database.Exec("DO $$ BEGIN CREATE TYPE faculty_status_enum AS ENUM ('PENDING', 'LEGIT', 'NOT_LEGIT'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
+
+	// Auto-migrate tables for certificate workflow
+	if err := database.AutoMigrate(
+		&models.Student{},
+		&models.Certificate{},
+		&models.StudentStatistics{},
+		&models.SectionStatistics{},
+	); err != nil {
+		logger.Fatal("failed to auto-migrate database", zap.Error(err))
+	}
 
 	healthRepo := internalRepository.NewHealthRepository(database)
 	healthService := internalService.NewHealthService(healthRepo)

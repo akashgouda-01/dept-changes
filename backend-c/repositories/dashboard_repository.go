@@ -56,7 +56,7 @@ func (r *dashboardRepository) GetOverview(ctx context.Context, facultyID string)
 			COALESCE(COUNT(CASE WHEN faculty_status = 'LEGIT' THEN 1 END), 0) AS verified_count,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 END), 0) AS rejected_count,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' AND ml_status = 'VERIFIED' THEN 1 END), 0) AS pending_count
-		FROM certificates
+		FROM faculty_certificates
 		WHERE archived = false
 	`
 
@@ -97,7 +97,7 @@ func (r *dashboardRepository) GetSectionStats(ctx context.Context, facultyID str
 			COALESCE(COUNT(CASE WHEN faculty_status = 'LEGIT' THEN 1 END), 0) AS verified_certificates,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 END), 0) AS rejected_certificates,
 			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' AND ml_status = 'VERIFIED' THEN 1 END), 0) AS pending_certificates
-		FROM certificates
+		FROM faculty_certificates
 		WHERE archived = false
 	`
 
