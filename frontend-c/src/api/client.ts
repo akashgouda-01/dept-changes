@@ -15,18 +15,10 @@ export const apiClient = axios.create({
 // Request Interceptor: Attach Token
 apiClient.interceptors.request.use(
     (config) => {
-        // Read the user object from localStorage
-        const storedUser = localStorage.getItem('eduvault_user');
-        if (storedUser) {
-            try {
-                const user = JSON.parse(storedUser);
-                // Header format: Bearer <email>|<role>
-                if (user.email && user.role) {
-                    config.headers.Authorization = `Bearer ${user.email}|${user.role}`;
-                }
-            } catch (error) {
-                console.error('Failed to parse user from local storage:', error);
-            }
+        // Read the token from localStorage
+        const token = localStorage.getItem('eduvault_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },

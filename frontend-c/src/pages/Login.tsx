@@ -8,6 +8,7 @@ import { Shield, GraduationCap, Users, Loader2, Mail } from 'lucide-react';
 export default function Login() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -32,11 +33,16 @@ export default function Login() {
       return;
     }
 
+    if (!password) {
+      toast({ title: 'Password Required', description: 'Please enter your password.', variant: 'destructive' });
+      return;
+    }
+
     setIsSubmitting(true);
     // Simulate network delay for better UX
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    const { error } = signIn(email, selectedRole);
+    const { error } = await signIn(email, password, selectedRole);
 
     if (error) {
       toast({ title: 'Sign In Failed', description: error.message, variant: 'destructive' });
@@ -130,11 +136,18 @@ export default function Login() {
               </div>
             </div>
 
+            <div className="login-email-section">
+              <label className="label" htmlFor="password">Password</label>
+              <div className="login-email-input-wrapper">
+                <Shield />
+                <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="input input-with-icon" required />
+              </div>
+            </div>
+
             <button type="submit" disabled={isSubmitting} className="btn btn-primary login-submit-btn">
               {isSubmitting && <Loader2 className="spinner" style={{ width: '1.25rem', height: '1.25rem' }} />}
               Sign In
             </button>
-
 
 
             <p className="login-email-hint">Only @citchennai.net emails are allowed</p>

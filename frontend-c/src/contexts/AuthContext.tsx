@@ -16,11 +16,12 @@ interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signIn: (email: string, role: UserRole) => { error: Error | null };
+  signIn: (email: string, password: string, role: UserRole) => Promise<{ error: Error | null }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { apiClient } from '@/api/client';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -29,81 +30,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check local storage for persisted user
     const storedUser = localStorage.getItem('eduvault_user');
-    if (storedUser) {
+    const storedToken = localStorage.getItem('eduvault_token');
+
+    if (storedUser && storedToken) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        // basic validation
         if (parsedUser && parsedUser.email && parsedUser.role) {
           setUser(parsedUser);
         } else {
           localStorage.removeItem('eduvault_user');
+          localStorage.removeItem('eduvault_token');
         }
       } catch (error) {
         console.error('Failed to parse user from local storage:', error);
         localStorage.removeItem('eduvault_user');
+        localStorage.removeItem('eduvault_token');
       }
     }
     setIsLoading(false);
   }, []);
 
-  const signIn = (email: string, role: UserRole): { error: Error | null } => {
+  const signIn = async (email: string, password: string, role: UserRole): Promise<{ error: Error | null }> => {
     try {
-      // Whitelist Validation
-      const accessMap: Record<string, { role: UserRole; staffId: string; sections?: string[] }> = {
-        'harjeetp.cse2024@citchennai.net': {
-          role: 'faculty',
-          staffId: 'FAC01',
-          sections: ['A', 'B', 'C', 'D', 'E', 'F']
-        },
-        'hemanm.cse2024@citchennai.net': {
-          role: 'faculty',
-          staffId: 'FAC02',
-          sections: ['G', 'H', 'I', 'J', 'K', 'L']
-        },
-        'akashkumargouda.cse2024@citchennai.net': {
-          role: 'faculty',
-          staffId: 'FAC03',
-          sections: ['M', 'N', 'O', 'P', 'Q']
-        },
-        'aadhishs.cse2024@citchennai.net': {
-          role: 'hod',
-          staffId: 'HOD01'
-        }
-      };
+      const response = await apiClient.post('/auth/login', {
+        email,
+        password,
+        role
+      });
 
-      const normalizedEmail = email.toLowerCase();
-      const userConfig = accessMap[normalizedEmail];
+      const { token, user: apiUser } = response.data;
 
-      if (!userConfig) {
-        return { error: new Error('This email is not authorized.') };
-      }
-
-      if (userConfig.role !== role) {
-        return { error: new Error(`This email belongs to ${userConfig.role}, not ${role}.`) };
-      }
-
+      // Map API user to AuthUser context
       const newUser: AuthUser = {
-        id: crypto.randomUUID(),
-        name: email.split('@')[0],
-        email: email,
-        role: role,
-        staffId: userConfig.staffId,
-        position: role === 'hod' ? 'Head of Department' : 'Assistant Professor',
+        id: apiUser.faculty_id || 'HOD01',  // Use faculty_id from backend or fallback
+        name: apiUser.email.split('@')[0],
+        email: apiUser.email,
+        role: apiUser.role,
+        staffId: apiUser.faculty_id,
+        position: apiUser.role === 'hod' ? 'Head of Department' : 'Assistant Professor',
         department: 'Computer Science & Engineering',
-        assignedSections: userConfig.sections
+        assignedSections: [], // You might want the backend to return this too, or map it here if needed
       };
+
+      // Temporary Hardcoded Section Map until backend sends it
+      if (newUser.id === 'FAC01') newUser.assignedSections = ['A', 'B', 'C', 'D', 'E', 'F'];
+      if (newUser.id === 'FAC02') newUser.assignedSections = ['G', 'H', 'I', 'J', 'K', 'L'];
+      if (newUser.id === 'FAC03') newUser.assignedSections = ['M', 'N', 'O', 'P', 'Q'];
+
 
       setUser(newUser);
       localStorage.setItem('eduvault_user', JSON.stringify(newUser));
+      localStorage.setItem('eduvault_token', token);
+
       return { error: null };
     } catch (error: any) {
-      return { error };
+      console.error("Login error", error);
+      const msg = error.response?.data?.error || "Login failed";
+      return { error: new Error(msg) };
     }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('eduvault_user');
+    localStorage.removeItem('eduvault_token');
   };
 
   return (

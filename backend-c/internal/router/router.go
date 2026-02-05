@@ -27,6 +27,13 @@ func New(healthService internalService.HealthService, dashboardService services.
 	healthController := internalController.NewHealthController(healthService)
 	engine.GET("/health", healthController.Health)
 
+	// Auth Routes
+	authController := controllers.NewAuthController()
+	authGroup := engine.Group("/auth")
+	{
+		authGroup.POST("/login", authController.Login)
+	}
+
 	dashboardController := controllers.NewDashboardController(dashboardService)
 	dashboard := engine.Group("/dashboard")
 	dashboard.Use(middleware.MockAuthMiddleware("citchennai.net"))
