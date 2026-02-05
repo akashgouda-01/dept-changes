@@ -17,6 +17,27 @@ export interface SectionStat {
     verification_rate: number;
 }
 
+export interface RecentActivity {
+    id: string;
+    student_name: string;
+    reg_no: string;
+    section: string;
+    action: string;
+    timestamp: string;
+
+}
+
+export interface Student {
+    ID: number;
+    RegisterNumber: string;
+    Name: string;
+    Email: string;
+    Section: string;
+    Semester: number;
+    IsPresent: boolean;
+    FacultyEmail: string;
+}
+
 // DASHBOARD METHODS
 
 export const getDashboardOverview = async () => {
@@ -27,4 +48,20 @@ export const getDashboardOverview = async () => {
 export const getDashboardSections = async () => {
     const { data } = await apiClient.get<{ success: boolean; data: SectionStat[] }>('/dashboard/sections');
     return data;
+};
+
+export const getRecentActivity = async () => {
+    const { data } = await apiClient.get<{ success: boolean; data: RecentActivity[] }>('/dashboard/recent-activity');
+    return data;
+};
+export const getAssignedStudents = async () => {
+    const { data } = await apiClient.get<{ success: boolean; data: Student[] }>('/dashboard/students');
+    return data;
+};
+
+export const exportMyCertificates = async () => {
+    const response = await apiClient.get('/dashboard/export/certificates', {
+        responseType: 'blob',
+    });
+    return response;
 };

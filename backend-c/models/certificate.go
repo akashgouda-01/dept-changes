@@ -29,6 +29,7 @@ type Certificate struct {
 	StudentName    string        `gorm:"column:student_name;type:text;not null"`
 	UploadedBy     string        `gorm:"column:faculty_id;type:text;not null"`
 	UploadedAt     time.Time     `gorm:"column:uploaded_at;type:timestamp with time zone;not null"`
+	UpdatedAt      time.Time     `gorm:"column:updated_at;type:timestamp with time zone;default:now()"`
 	MLStatus       MLStatus      `gorm:"column:ml_status;type:ml_status_enum;default:'PENDING';not null"`
 	FacultyStatus  FacultyStatus `gorm:"column:faculty_status;type:faculty_status_enum;default:'PENDING';not null"`
 	// Updated to map to DB columns

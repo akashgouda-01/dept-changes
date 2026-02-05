@@ -28,6 +28,7 @@ type HodService interface {
 	ListStudentCertificates(ctx context.Context, regNo string) ([]models.Certificate, error)
 	ExportCertificatesBySection(ctx context.Context, section string) (string, []byte, error)
 	ExportCertificatesByStudent(ctx context.Context, regNo string) (string, []byte, error)
+	ExportCertificatesByFaculty(ctx context.Context, facultyID string) (string, []byte, error)
 }
 
 type hodService struct {
@@ -83,6 +84,20 @@ func (s *hodService) ExportCertificatesByStudent(ctx context.Context, regNo stri
 	}
 	filename := fmt.Sprintf("certificates_student_%s_%d.xlsx", sanitizeForFilename(regNo), time.Now().Unix())
 	bytes, err := excel.BuildCertificatesWorkbook(certs, fmt.Sprintf("Student-%s", regNo))
+	return filename, bytes, err
+}
+
+func (s *hodService) ExportCertificatesByFaculty(ctx context.Context, facultyID string) (string, []byte, error) {
+	facultyID = strings.TrimSpace(facultyID)
+	certs, err := s.repo.GetCertificatesByFacultyID(ctx, facultyID)
+	if err != nil {
+		return "", nil, err
+	}
+	// Filename format: FACID_VERIFIED_CERTIFICATES_DATE
+	dateStr := time.Now().Format("20060102")
+	filename := fmt.Sprintf("%s_VERIFIED_CERTIFICATES_%s.xlsx", sanitizeForFilename(facultyID), dateStr)
+
+	bytes, err := excel.BuildCertificatesWorkbook(certs, fmt.Sprintf("Faculty-%s", facultyID))
 	return filename, bytes, err
 }
 

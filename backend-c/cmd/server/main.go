@@ -65,6 +65,9 @@ func main() {
 		logger.Fatal("failed to auto-migrate database", zap.Error(err))
 	}
 
+	// Backfill UpdatedAt if null, ensuring legacy data has timestamps
+	database.Exec("UPDATE faculty_certificates SET updated_at = uploaded_at WHERE updated_at IS NULL")
+
 	healthRepo := internalRepository.NewHealthRepository(database)
 	healthService := internalService.NewHealthService(healthRepo)
 

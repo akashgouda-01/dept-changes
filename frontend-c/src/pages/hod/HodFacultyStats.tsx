@@ -31,6 +31,32 @@ export default function HodFacultyStats() {
             setIsLoading(false);
         }
     };
+    const handleExport = async () => {
+        try {
+            const response = await import('@/api/hod.api').then(m => m.exportCertificatesByFaculty(facultyId));
+
+            // Create blob link to download
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+
+            // Extract filename from header or default
+            const contentDisp = response.headers['content-disposition'];
+            let customFilename = `Faculty_${facultyId}_Certificates.xlsx`;
+            if (contentDisp && contentDisp.indexOf('filename=') !== -1) {
+                customFilename = contentDisp.split('filename=')[1].replace(/"/g, '');
+            }
+
+            link.setAttribute('download', customFilename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast({ title: 'Success', description: 'Export downloaded successfully.', variant: 'default' });
+        } catch (error) {
+            console.error(error);
+            toast({ title: 'Error', description: 'Failed to export data.', variant: 'destructive' });
+        }
+    };
 
     return (
         <DashboardLayout requiredRole="hod">
@@ -67,7 +93,12 @@ export default function HodFacultyStats() {
                     <div className="section-card">
                         <div className="section-card-header mb-4">
                             <h2 className="section-card-title">Student List</h2>
-                            {stats.length > 0 && <span className="badge badge-outline">{stats.length} Students</span>}
+                            <div className="flex items-center gap-3">
+                                {stats.length > 0 && <span className="badge badge-outline">{stats.length} Students</span>}
+                                <button onClick={handleExport} className="btn btn-outline btn-sm gap-2">
+                                    <Download className="w-4 h-4" /> Export Excel
+                                </button>
+                            </div>
                         </div>
 
                         {stats.length === 0 ? (

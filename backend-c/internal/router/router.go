@@ -29,10 +29,12 @@ func New(healthService internalService.HealthService, dashboardService services.
 
 	dashboardController := controllers.NewDashboardController(dashboardService)
 	dashboard := engine.Group("/dashboard")
-	dashboard.Use(middleware.MockAuthMiddleware("citchennai.net"))
+	dashboard.Use(middleware.AuthMiddleware("citchennai.net"))
 	{
 		dashboard.GET("/overview", dashboardController.GetOverview)
 		dashboard.GET("/sections", dashboardController.GetSections)
+		dashboard.GET("/recent-activity", dashboardController.GetRecentActivity)
+		dashboard.GET("/export/certificates", dashboardController.ExportMyCertificates)
 	}
 
 	adminController := controllers.NewAdminController(adminRepo)
@@ -47,7 +49,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 	certController := controllers.NewCertificateController(certService)
 
 	certificates := engine.Group("/certificates")
-	certificates.Use(middleware.MockAuthMiddleware("citchennai.net"))
+	certificates.Use(middleware.AuthMiddleware("citchennai.net"))
 	{
 		certificates.POST("/upload", certController.UploadCertificates)
 		certificates.GET("/pending-review", certController.GetPendingReview)
@@ -56,7 +58,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 
 	// Verify endpoint (Faculty/HOD)
 	engine.POST("/faculty/certificate/verify",
-		middleware.MockAuthMiddleware("citchennai.net"),
+		middleware.AuthMiddleware("citchennai.net"),
 		certController.TriggerMockVerification,
 	)
 
@@ -67,7 +69,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 
 	hod := engine.Group("/hod")
 	hod.Use(
-		middleware.MockAuthMiddleware("citchennai.net"),
+		middleware.AuthMiddleware("citchennai.net"),
 		middleware.RequireRoles("HOD"),
 	)
 	{
@@ -76,6 +78,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 		hod.GET("/student/certificates", hodController.ListStudentCertificates)
 		hod.GET("/export/certificates/section", hodController.ExportCertificatesBySection)
 		hod.GET("/export/certificates/student", hodController.ExportCertificatesByStudent)
+		hod.GET("/export/certificates/faculty", hodController.ExportCertificatesByFaculty)
 	}
 
 	return engine

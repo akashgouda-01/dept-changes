@@ -50,3 +50,38 @@ func (dc *DashboardController) GetSections(c *gin.Context) {
 		"data":    sections,
 	})
 }
+
+// GetRecentActivity handles GET /dashboard/recent-activity
+func (dc *DashboardController) GetRecentActivity(c *gin.Context) {
+	role := c.GetString("role")
+	facultyID := c.GetString("faculty_id")
+
+	activities, err := dc.service.GetRecentActivity(c.Request.Context(), role, facultyID)
+	if err != nil {
+		_ = c.Error(utils.NewDatabaseError("failed to load recent activity", err))
+		return
+	}
+	c.JSON(200, gin.H{
+		"success": true,
+		"data":    activities,
+	})
+}
+
+// ExportMyCertificates handles GET /dashboard/export/certificates
+func (dc *DashboardController) ExportMyCertificates(c *gin.Context) {
+	facultyID := c.GetString("faculty_id")
+	if facultyID == "" {
+		_ = c.Error(utils.NewValidationError("faculty_id is required", nil))
+		return
+	}
+
+	filename, content, err := dc.service.ExportMyCertificates(c.Request.Context(), facultyID)
+	if err != nil {
+		_ = c.Error(utils.NewDatabaseError("failed to export certificates", err))
+		return
+	}
+
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	c.Data(200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content)
+}

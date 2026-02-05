@@ -1,33 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { User, Mail, BadgeCheck, Building2, Users, Plus, Pencil, Trash2, Search } from 'lucide-react';
-import { Student } from '@/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-const initialStudents: Student[] = [
-  { id: '1', registerNumber: '24CS0001', name: 'John Doe', email: 'john@citchennai.net', section: 'A', semester: 5, isPresent: true },
-  { id: '2', registerNumber: '24CS0002', name: 'Jane Smith', email: 'jane@citchennai.net', section: 'A', semester: 5, isPresent: true },
-  { id: '3', registerNumber: '24CS0003', name: 'Mike Wilson', email: 'mike@citchennai.net', section: 'B', semester: 5, isPresent: false },
-];
+// Hardcoded mock data for popup (Placeholder)
+const MOCK_STUDENTS_PER_SECTION: Record<string, { regNo: string, name: string, email: string }[]> = {
+  'A': [
+    { regNo: '24CS0001', name: 'Student A1', email: 'a1@citchennai.net' },
+    { regNo: '24CS0002', name: 'Student A2', email: 'a2@citchennai.net' },
+  ],
+  'B': [
+    { regNo: '24CS0003', name: 'Student B1', email: 'b1@citchennai.net' },
+    { regNo: '24CS0004', name: 'Student B2', email: 'b2@citchennai.net' },
+  ],
+  // Fallback for others
+  'default': [
+    { regNo: '24CSXXXX', name: 'Mock Student 1', email: 'mock1@citchennai.net' },
+    { regNo: '24CSYYYY', name: 'Mock Student 2', email: 'mock2@citchennai.net' },
+  ]
+};
 
 export default function FacultyProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [students, setStudents] = useState<Student[]>(initialStudents);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sectionFilter, setSectionFilter] = useState('all');
 
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) || student.registerNumber.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSection = sectionFilter === 'all' || student.section === sectionFilter;
-    return matchesSearch && matchesSection;
-  });
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleDeleteStudent = (studentId: string) => {
-    const student = students.find(s => s.id === studentId);
-    setStudents(students.filter(s => s.id !== studentId));
-    toast({ title: 'Student Removed', description: `${student?.name} has been removed.` });
+  const handleSectionClick = (section: string) => {
+    setSelectedSection(section);
+    setIsDialogOpen(true);
+  };
+
+  const getStudentsForSection = (section: string) => {
+    return MOCK_STUDENTS_PER_SECTION[section] || MOCK_STUDENTS_PER_SECTION['default'];
   };
 
   return (
@@ -51,33 +65,75 @@ export default function FacultyProfile() {
           </div>
         </div>
 
-        <div className="student-list-card">
-          <div className="student-list-header">
-            <div className="student-list-title-section"><div className="student-list-icon"><Users /></div><div><h2 className="student-list-title">Assigned Students</h2><p className="student-list-count">{students.length} students total</p></div></div>
-                        </div>
-
-          <div className="filters-row">
-            <div className="search-input-wrapper"><Search /><input type="text" placeholder="Search by name or register number..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input input-with-icon" /></div>
-            <select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)} className="input filter-select"><option value="all">All Sections</option><option value="A">Section A</option><option value="B">Section B</option></select>
+        <div className="section-list-card">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <Users size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Assigned Sections
+              </h2>
+              <p className="text-sm text-muted-foreground">Click on a section to view student details</p>
+            </div>
           </div>
 
-          <div className="table-container">
-            <table className="table">
-              <thead><tr><th>Register No.</th><th>Name</th><th>Email</th><th>Section</th><th style={{textAlign:'right'}}>Actions</th></tr></thead>
-              <tbody>
-                {filteredStudents.map((student) => (
-                  <tr key={student.id}>
-                    <td className="font-mono">{student.registerNumber}</td>
-                    <td>{student.name}</td>
-                    <td style={{color:'var(--muted-foreground)'}}>{student.email}</td>
-                    <td><span className="badge badge-outline">Section {student.section}</span></td>
-                    <td style={{textAlign:'right'}}><button className="btn btn-ghost btn-icon"></button><button className="btn btn-ghost btn-icon" onClick={() => handleDeleteStudent(student.id)} style={{color:'var(--destructive)'}}><Trash2 style={{width:'1rem',height:'1rem'}} /></button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {user?.assignedSections?.map((section) => (
+              <button
+                key={section}
+                onClick={() => handleSectionClick(section)}
+                className="group relative flex flex-col items-center justify-center p-8 bg-card hover:bg-gradient-to-br hover:from-primary/5 hover:to-transparent border border-border/60 rounded-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+              >
+                <div className="absolute top-4 right-4 text-muted-foreground/20 group-hover:text-primary/20 transition-colors">
+                  <BadgeCheck size={80} strokeWidth={1} />
+                </div>
+
+                <div className="relative z-10 text-center space-y-2">
+                  <span className="text-4xl font-bold text-foreground group-hover:text-primary transition-colors">
+                    {section}
+                  </span>
+                  <div className="h-1 w-12 bg-border group-hover:bg-primary/50 mx-auto rounded-full transition-colors" />
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Section
+                  </p>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Students in Section {selectedSection}</DialogTitle>
+              <DialogDescription>
+                List of students assigned to this section.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="max-h-[60vh] overflow-y-auto mt-4 border rounded-md">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 sticky top-0 text-left">
+                  <tr>
+                    <th className="p-3 font-medium text-muted-foreground">Reg No.</th>
+                    <th className="p-3 font-medium text-muted-foreground">Name</th>
+                    <th className="p-3 font-medium text-muted-foreground">Email</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {selectedSection && getStudentsForSection(selectedSection).map((student, idx) => (
+                    <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                      <td className="p-3 font-mono text-xs">{student.regNo}</td>
+                      <td className="p-3 font-medium">{student.name}</td>
+                      <td className="p-3 text-muted-foreground">{student.email}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

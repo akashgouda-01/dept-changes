@@ -25,6 +25,7 @@ type HodRepository interface {
 	GetStudentStatsByFaculty(ctx context.Context, facultyID string) ([]StudentStatsRow, error)
 	GetCertificatesByStudent(ctx context.Context, regNo string) ([]models.Certificate, error)
 	GetCertificatesBySection(ctx context.Context, section string) ([]models.Certificate, error)
+	GetCertificatesByFacultyID(ctx context.Context, facultyID string) ([]models.Certificate, error)
 }
 
 type hodRepository struct {
@@ -46,13 +47,13 @@ func (r *hodRepository) GetStudentStatsByFaculty(ctx context.Context, facultyID 
 	query := `
 		SELECT
 			c.reg_no AS register_number,
-			CAST('' AS text) AS student_name,
+			MAX(c.student_name) AS student_name,
 			c.section,
 			COUNT(*) AS total,
 			COUNT(*) FILTER (WHERE c.faculty_status = 'LEGIT') AS verified,
 			COUNT(*) FILTER (WHERE c.faculty_status = 'NOT_LEGIT') AS rejected,
 			COUNT(*) FILTER (WHERE c.faculty_status = 'PENDING') AS pending
-		FROM certificates c
+		FROM faculty_certificates c
 		WHERE c.archived = false AND c.faculty_id = ?
 		GROUP BY c.reg_no, c.section
 		ORDER BY c.reg_no;
@@ -94,6 +95,23 @@ func (r *hodRepository) GetCertificatesBySection(ctx context.Context, section st
 		Order("uploaded_at DESC").
 		Find(&certs).Error; err != nil {
 		return nil, fmt.Errorf("query certificates by section: %w", err)
+	}
+
+	return certs, nil
+}
+
+// GetCertificatesByFacultyID returns all certificates uploaded by a specific faculty member.
+func (r *hodRepository) GetCertificatesByFacultyID(ctx context.Context, facultyID string) ([]models.Certificate, error) {
+	if facultyID == "" {
+		return nil, fmt.Errorf("faculty_id is required")
+	}
+
+	var certs []models.Certificate
+	if err := r.db.WithContext(ctx).
+		Where("faculty_id = ? AND archived = false", facultyID).
+		Order("section ASC, reg_no ASC").
+		Find(&certs).Error; err != nil {
+		return nil, fmt.Errorf("query certificates by faculty: %w", err)
 	}
 
 	return certs, nil

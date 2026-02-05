@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"department-eduvault-backend/models"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -23,9 +24,20 @@ type SectionDashboardRow struct {
 	PendingCertificates  int64
 }
 
+type RecentActivityRow struct {
+	ID          string
+	StudentName string
+	RegNo       string
+	Section     string
+	Action      string
+	Timestamp   string
+}
+
 type DashboardRepository interface {
 	GetOverview(ctx context.Context, facultyID string) (DashboardOverview, error)
 	GetSectionStats(ctx context.Context, facultyID string) ([]SectionDashboardRow, error)
+	GetRecentActivity(ctx context.Context, facultyID string) ([]RecentActivityRow, error)
+	GetCertificatesByFacultyID(ctx context.Context, facultyID string) ([]models.Certificate, error)
 }
 
 type dashboardRepository struct {
@@ -64,6 +76,15 @@ func (r *dashboardRepository) GetOverview(ctx context.Context, facultyID string)
 		// As per instructions, filtered by faculty_id
 		query += " AND faculty_id = ?"
 		args = append(args, facultyID)
+
+		// Force section filtering based on Faculty ID allocation
+		if facultyID == "FAC01" {
+			query += " AND section <= 'F'"
+		} else if facultyID == "FAC02" {
+			query += " AND section >= 'G' AND section <= 'L'"
+		} else if facultyID == "FAC03" {
+			query += " AND section >= 'M'"
+		}
 	}
 
 	query += ";"
@@ -104,6 +125,15 @@ func (r *dashboardRepository) GetSectionStats(ctx context.Context, facultyID str
 	if facultyID != "" {
 		query += " AND faculty_id = ?"
 		args = append(args, facultyID)
+
+		// Force section filtering based on Faculty ID allocation
+		if facultyID == "FAC01" {
+			query += " AND section <= 'F'"
+		} else if facultyID == "FAC02" {
+			query += " AND section >= 'G' AND section <= 'L'"
+		} else if facultyID == "FAC03" {
+			query += " AND section >= 'M'"
+		}
 	}
 
 	query += " GROUP BY section ORDER BY section;"
@@ -113,4 +143,112 @@ func (r *dashboardRepository) GetSectionStats(ctx context.Context, facultyID str
 	}
 
 	return rows, nil
+}
+
+func (r *dashboardRepository) GetRecentActivity(ctx context.Context, facultyID string) ([]RecentActivityRow, error) {
+	// We want activities from "Today".
+	// Since we introduced updated_at, we use that.
+	// Action logic:
+	// If faculty_status = 'LEGIT' -> VERIFIED
+	// If faculty_status = 'NOT_LEGIT' -> REJECTED
+	// If faculty_status = 'PENDING' -> UPLOADED (Assuming created today)
+
+	type dbRow struct {
+		ID            string
+		StudentName   string
+		RegNo         string
+		Section       string
+		FacultyStatus string
+		UploadedAt    string
+		UpdatedAt     string
+	}
+
+	var results []dbRow
+	args := []interface{}{}
+
+	// Fetch certificates updated or uploaded today (Postgres `CURRENT_DATE`)
+	query := `
+		SELECT 
+			id, student_name, reg_no, section, faculty_status::text,
+			uploaded_at::text, updated_at::text
+		FROM faculty_certificates
+		WHERE archived = false
+		AND (DATE(updated_at) = CURRENT_DATE OR DATE(uploaded_at) = CURRENT_DATE)
+	`
+
+	if facultyID != "" {
+		query += " AND faculty_id = ?"
+		args = append(args, facultyID)
+
+		if facultyID == "FAC01" {
+			query += " AND section <= 'F'"
+		} else if facultyID == "FAC02" {
+			query += " AND section >= 'G' AND section <= 'L'"
+		} else if facultyID == "FAC03" {
+			query += " AND section >= 'M'"
+		}
+	}
+
+	query += " ORDER BY updated_at DESC LIMIT 50;"
+
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	var activities []RecentActivityRow
+	for _, row := range results {
+		action := "UPLOADED"
+		ts := row.UploadedAt
+
+		// If status is not pending, it was verified/rejected
+		// We use UpdatedAt as the timestamp of action
+		if row.FacultyStatus == "LEGIT" {
+			action = "VERIFIED"
+			ts = row.UpdatedAt
+		} else if row.FacultyStatus == "NOT_LEGIT" {
+			action = "REJECTED"
+			ts = row.UpdatedAt
+		} else {
+			// PENDING
+			action = "UPLOADED"
+			ts = row.UploadedAt
+		}
+
+		activities = append(activities, RecentActivityRow{
+			ID:          row.ID,
+			StudentName: row.StudentName,
+			RegNo:       row.RegNo,
+			Section:     row.Section,
+			Action:      action,
+			Timestamp:   ts,
+		})
+	}
+
+	return activities, nil
+}
+
+func (r *dashboardRepository) GetCertificatesByFacultyID(ctx context.Context, facultyID string) ([]models.Certificate, error) {
+	if facultyID == "" {
+		return nil, fmt.Errorf("faculty_id is required")
+	}
+
+	var certs []models.Certificate
+	query := r.db.WithContext(ctx).
+		Where("faculty_id = ? AND archived = false", facultyID)
+
+	// Force section filtering based on Faculty ID allocation
+	if facultyID == "FAC01" {
+		query = query.Where("section <= 'F'")
+	} else if facultyID == "FAC02" {
+		query = query.Where("section >= 'G' AND section <= 'L'")
+	} else if facultyID == "FAC03" {
+		query = query.Where("section >= 'M'")
+	}
+
+	if err := query.Order("section ASC, reg_no ASC").
+		Find(&certs).Error; err != nil {
+		return nil, fmt.Errorf("query certificates by faculty: %w", err)
+	}
+
+	return certs, nil
 }

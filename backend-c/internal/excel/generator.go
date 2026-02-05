@@ -2,73 +2,104 @@ package excel
 
 import (
 	"bytes"
+	"department-eduvault-backend/models"
 	"fmt"
 	"time"
 
-	"department-eduvault-backend/models"
 	"github.com/xuri/excelize/v2"
 )
 
-// BuildCertificatesWorkbook renders certificates into a single-sheet XLSX file.
-func BuildCertificatesWorkbook(certs []models.Certificate, sheetName string) ([]byte, error) {
+// BuildCertificatesWorkbook creates an Excel file from a slice of certificates.
+// It creates sheets based on sections if multiple sections are present, or a single sheet if specified.
+func BuildCertificatesWorkbook(certs []models.Certificate, defaultSheetName string) ([]byte, error) {
 	f := excelize.NewFile()
-	sheet := "Certificates"
-	if sheetName != "" {
-		sheet = sheetName
-	}
-	f.SetSheetName(f.GetSheetName(0), sheet)
 
-	headers := []string{
-		"Register Number",
-		"Student Name",
-		"Section",
-		"Drive Link",
-		"Uploaded By",
-		"Uploaded At",
-		"ML Status",
-		"ML Score",
-		"Faculty Status",
-		"Is Legit",
+	// Map certs by section
+	certsBySection := make(map[string][]models.Certificate)
+	for _, cert := range certs {
+		section := cert.Section
+		if section == "" {
+			section = "Unknown"
+		}
+		certsBySection[section] = append(certsBySection[section], cert)
 	}
 
-	// Header row
-	for idx, header := range headers {
-		cell, _ := excelize.CoordinatesToCellName(idx+1, 1)
-		_ = f.SetCellValue(sheet, cell, header)
-	}
-
-	// Data rows
-	for i, cert := range certs {
-		row := i + 2 // data starts at row 2
-		setCell := func(col int, val interface{}) {
-			cell, _ := excelize.CoordinatesToCellName(col, row)
-			_ = f.SetCellValue(sheet, cell, val)
+	// Create a sheet for each section
+	firstSheet := true
+	for section, sectionCerts := range certsBySection {
+		sheetName := fmt.Sprintf("Section %s", section)
+		if len(sheetName) > 31 {
+			sheetName = sheetName[:31] // Excel limit
 		}
 
-		setCell(1, cert.RegisterNumber)
-		setCell(3, cert.Section)
-		setCell(4, cert.DriveLink)
-		setCell(5, cert.UploadedBy)
-		setCell(6, cert.UploadedAt.Format(time.RFC3339))
-		setCell(7, cert.MLStatus)
-		if cert.MLScore != nil {
-			setCell(8, *cert.MLScore)
-		} else {
-			setCell(8, "")
+		index, err := f.NewSheet(sheetName)
+		if err != nil {
+			return nil, err
 		}
-		setCell(9, cert.FacultyStatus)
-		if cert.IsLegit != nil {
-			setCell(10, *cert.IsLegit)
-		} else {
-			setCell(10, "")
+
+		if firstSheet {
+			// Remove default Sheet1 if we are adding our own
+			f.DeleteSheet("Sheet1")
+			f.SetActiveSheet(index)
+			firstSheet = false
 		}
+
+		// Set headers
+		headers := []string{
+			"Register Number",
+			"Student Name",
+			"Section",
+			"Drive Link",
+			"Uploaded By",
+			"Uploaded At",
+			"ML Status",
+			"ML Score",
+			"Faculty Status",
+			"Is Legit",
+		}
+
+		for i, header := range headers {
+			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+			f.SetCellValue(sheetName, cell, header)
+		}
+
+		// Add data
+		for i, cert := range sectionCerts {
+			row := i + 2
+			setCell := func(col int, val interface{}) {
+				cell, _ := excelize.CoordinatesToCellName(col, row)
+				_ = f.SetCellValue(sheetName, cell, val)
+			}
+
+			setCell(1, cert.RegisterNumber)
+			setCell(2, cert.StudentName)
+			setCell(3, cert.Section)
+			setCell(4, cert.DriveLink)
+			setCell(5, cert.UploadedBy)
+			setCell(6, cert.UploadedAt.Format(time.RFC3339))
+			setCell(7, cert.MLStatus)
+			if cert.MLScore != nil {
+				setCell(8, *cert.MLScore)
+			}
+			setCell(9, cert.FacultyStatus)
+			if cert.IsLegit != nil {
+				setCell(10, *cert.IsLegit)
+			}
+		}
+
+		autoSizeColumns(f, sheetName, len(headers))
 	}
 
-	autoSizeColumns(f, sheet, len(headers))
+	// If no certs, create a placeholder
+	if len(certs) == 0 {
+		f.NewSheet(defaultSheetName)
+		f.DeleteSheet("Sheet1")
+		f.SetCellValue(defaultSheetName, "A1", "No records found")
+	}
 
 	var buf bytes.Buffer
 	if err := f.Write(&buf); err != nil {
-		return nil, fmt.Errorf("write workbook: %w", err)
+		return nil, err
 	}
 	return buf.Bytes(), nil
 }

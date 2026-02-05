@@ -1,134 +1,199 @@
-/* Certificate Verification Page Styles */
+/* ---------------------------------------------------
+   CERTIFICATE VERIFICATION – ENHANCED UI STYLES
+----------------------------------------------------*/
 
+/* --- Upload Section Wrapper --- */
 .upload-section {
-  padding: 1.5rem;
-  border: 2px solid var(--border);
-  background-color: var(--card);
+  padding: 1.75rem;
+  border-radius: 1.2rem;
+
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px);
+
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+
   margin-bottom: 2rem;
+  transition: 0.3s ease;
 }
 
+.upload-section:hover {
+  border-color: rgba(var(--primary-rgb), 0.4);
+  box-shadow: 0 12px 45px rgba(0, 0, 0, 0.22);
+}
+
+/* --- Header with Icon --- */
 .upload-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
 }
 
 .upload-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  background-color: var(--primary-light);
+  width: 2.8rem;
+  height: 2.8rem;
+
+  background: linear-gradient(135deg, var(--primary-light), rgba(var(--primary-rgb), 0.25));
+  border-radius: 12px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.35);
 }
 
 .upload-icon svg {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.3rem;
+  height: 1.3rem;
   color: var(--primary);
+  opacity: 0.9;
 }
 
 .upload-title {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
   color: var(--foreground);
 }
 
 .upload-subtitle {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
   color: var(--muted-foreground);
 }
 
-/* Upload Entry */
+/* ---------------------------------------------------
+   UPLOAD ENTRY LIST
+----------------------------------------------------*/
 .upload-entries {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 .upload-entry {
+  padding: 1.25rem;
+  border-radius: 1rem;
+
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.13);
+
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
-  padding: 1rem;
-  background-color: var(--secondary);
-  border: 2px solid var(--border);
+
+  transition: 0.25s ease;
+}
+
+.upload-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+  border-color: rgba(var(--primary-rgb), 0.35);
 }
 
 @media (min-width: 768px) {
   .upload-entry {
     grid-template-columns: auto 5fr 3fr 2fr auto;
-    align-items: flex-end;
+    align-items: end;
   }
 }
 
+/* Number badge */
 .upload-entry-number {
-  width: 2rem;
-  height: 2rem;
-  background-color: var(--primary);
+  width: 2.2rem;
+  height: 2.2rem;
+
+  background: linear-gradient(135deg, var(--primary), rgb(20 120 255 / 0.8));
+  border-radius: 8px;
+
   color: var(--primary-foreground);
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.875rem;
 }
 
+/* Field label + input */
 .upload-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .upload-field-label {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.75;
   color: var(--muted-foreground);
 }
 
-.upload-field .input-with-icon-wrapper {
+/* Icon Input Wrapper */
+.input-with-icon-wrapper {
   position: relative;
 }
 
-.upload-field .input-with-icon-wrapper svg {
+.input-with-icon-wrapper svg {
   position: absolute;
-  left: 0.75rem;
+  left: 0.8rem;
   top: 50%;
   transform: translateY(-50%);
   width: 1rem;
   height: 1rem;
+  opacity: 0.55;
   color: var(--muted-foreground);
 }
 
+.input-with-icon-wrapper input {
+  padding-left: 2.4rem !important;
+}
+
+/* Entry Actions */
 .upload-entry-actions {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
 }
 
+/* Buttons group */
 .upload-buttons {
   display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: 1.2rem;
+  margin-top: 1.75rem;
 }
 
-/* Certificate Card */
+/* ---------------------------------------------------
+   CERTIFICATE CARD
+----------------------------------------------------*/
 .certificate-card {
-  padding: 1.5rem;
-  border: 2px solid var(--border);
-  background-color: var(--card);
-  transition: border-color var(--transition-normal);
+  padding: 1.75rem;
+  border-radius: 1.1rem;
+
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px);
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+
+  transition: 0.28s ease;
 }
 
 .certificate-card:hover {
-  border-color: rgba(var(--primary), 0.3);
+  border-color: rgba(var(--primary-rgb), 0.45);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.28);
 }
 
+/* Card Internal Layout */
 .certificate-card-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 @media (min-width: 768px) {
@@ -139,25 +204,30 @@
   }
 }
 
+/* Info Badge Row */
 .certificate-info {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 .certificate-icon {
-  width: 3rem;
-  height: 3rem;
-  background-color: var(--primary-light);
+  width: 3.1rem;
+  height: 3.1rem;
+
+  background: linear-gradient(135deg, var(--primary-light), rgba(var(--primary-rgb), 0.28));
+  border-radius: 12px;
+
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.35);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .certificate-icon svg {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.4rem;
+  height: 1.4rem;
   color: var(--primary);
 }
 
@@ -168,35 +238,45 @@
 }
 
 .certificate-student-name {
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--foreground);
 }
 
 .certificate-register-number {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-family: var(--font-mono);
+  opacity: 0.75;
   color: var(--muted-foreground);
 }
 
 .certificate-badges {
   display: flex;
-  align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
   margin-top: 0.25rem;
 }
 
+/* Actions (Verify/Reject/View) */
 .certificate-actions {
   display: flex;
+  gap: 0.8rem;
   align-items: center;
-  gap: 0.75rem;
 }
 
-/* Empty State */
+/* ---------------------------------------------------
+   EMPTY STATE
+----------------------------------------------------*/
 .empty-state {
   padding: 3rem;
-  border: 2px solid var(--border);
-  background-color: var(--card);
+  border-radius: 1.2rem;
+
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
+
   text-align: center;
 }
 
@@ -204,9 +284,37 @@
   width: 3rem;
   height: 3rem;
   margin: 0 auto 1rem;
+  opacity: 0.6;
   color: var(--muted-foreground);
 }
 
 .empty-state p {
+  font-size: 0.9rem;
+  opacity: 0.75;
   color: var(--muted-foreground);
+}
+
+/* ---------------------------------------------------
+ Animations
+----------------------------------------------------*/
+@keyframes smoothFloat {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

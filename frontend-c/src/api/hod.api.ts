@@ -26,3 +26,10 @@ export const exportCertificatesByStudent = async (regNo: string) => {
     });
     return response;
 };
+
+export const exportCertificatesByFaculty = async (facultyId: string) => {
+    const response = await apiClient.get(`/hod/export/certificates/faculty?faculty_id=${facultyId}`, {
+        responseType: 'blob',
+    });
+    return response;
+};

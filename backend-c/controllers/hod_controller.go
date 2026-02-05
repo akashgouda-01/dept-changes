@@ -5,6 +5,7 @@ import (
 
 	"department-eduvault-backend/services"
 	"department-eduvault-backend/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -109,3 +110,22 @@ func (hc *HodController) ExportCertificatesByStudent(c *gin.Context) {
 	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content)
 }
 
+// ExportCertificatesByFaculty handles:
+// GET /hod/export/certificates/faculty?faculty_id=FAC01
+func (hc *HodController) ExportCertificatesByFaculty(c *gin.Context) {
+	facultyID := c.Query("faculty_id")
+	if facultyID == "" {
+		_ = c.Error(utils.NewValidationError("faculty_id is required", nil))
+		return
+	}
+
+	filename, content, err := hc.service.ExportCertificatesByFaculty(c.Request.Context(), facultyID)
+	if err != nil {
+		_ = c.Error(utils.NewDatabaseError("failed to export certificates by faculty", err))
+		return
+	}
+
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content)
+}
