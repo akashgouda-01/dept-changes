@@ -36,11 +36,9 @@ func initFirebase() {
 	fmt.Println("[AUTH] Firebase App Initialized")
 }
 
-// AuthMiddleware validates a Firebase ID token and enforces domain.
-func AuthMiddleware(allowedDomain string) gin.HandlerFunc {
-	// Lazy init
-	initFirebase()
-
+// MockAuthMiddleware validates a Google OAuth bearer token (placeholder) and enforces domain.
+// In production, replace token validation with real Google token verification.
+func MockAuthMiddleware(allowedDomain string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -49,68 +47,41 @@ func AuthMiddleware(allowedDomain string) gin.HandlerFunc {
 			return
 		}
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-		// Temporarily allow the old "mock" tokens for transition if needed,
-		// OR strictly enforce Firebase. Let's strict enforce but handle the "dev mode" if firebase fails.
-		if firebaseApp == nil {
-			// Fallback for dev if firebase not set up
-			// WARN: This is insecure, only for local dev without keys
-			fmt.Println("[AUTH] WARNING: Firebase not initialized, allowing request (DEV MODE)")
-			// Parse as mock if possible or just allow
-			// For strict mode: return error.
-			// Let's try to parse the mock format for backward compat during dev: email|role
-			if strings.Contains(tokenString, "|") {
-				MockFallback(c, tokenString, allowedDomain)
-				return
-			}
-			_ = c.Error(utils.NewAuthenticationError("firebase not configured and invalid mock token", nil))
+		// parseMockToken simulates token parsing; expected format: "email|role"
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		parts := strings.Split(token, "|")
+		if len(parts) < 1 {
+			_ = c.Error(utils.NewAuthenticationError("invalid mock token format", nil))
 			c.Abort()
 			return
 		}
-
-		ctx := context.Background()
-		client, err := firebaseApp.Auth(ctx)
-		if err != nil {
-			_ = c.Error(utils.NewAuthenticationError("firebase auth client error", err))
-			c.Abort()
-			return
-		}
-
-		token, err := client.VerifyIDToken(ctx, tokenString)
-		if err != nil {
-			_ = c.Error(utils.NewAuthenticationError("invalid token", err))
-			c.Abort()
-			return
-		}
-
-		email := ""
-		if e, ok := token.Claims["email"]; ok {
-			email = e.(string)
-		}
-
-		if !strings.HasSuffix(strings.ToLower(email), "@"+strings.ToLower(allowedDomain)) {
-			_ = c.Error(utils.NewAuthorizationError("email domain not allowed", nil))
-			c.Abort()
-			return
-		}
-
-		// Derive Identity (Role Logic mapped from existing)
-		role := "faculty"
-		facultyID := ""
-
+		email := strings.TrimSpace(parts[0])
 		lowerEmail := strings.ToLower(email)
-		if strings.HasPrefix(lowerEmail, "hod") {
-			role = "hod"
-		} else if strings.HasPrefix(lowerEmail, "faculty1") {
-			facultyID = "FAC01"
-		} else if strings.HasPrefix(lowerEmail, "faculty2") {
-			facultyID = "FAC02"
-		} else if strings.HasPrefix(lowerEmail, "faculty3") {
-			facultyID = "FAC03"
-		} else {
-			facultyID = "FAC00" // Unknown
+
+		// Define Allowlist & Role Mapping
+		// Map email -> struct{Role, FacultyID}
+		type UserConfig struct {
+			Role      string
+			FacultyID string
 		}
+
+		accessMap := map[string]UserConfig{
+			"harjeetp.cse2024@citchennai.net":        {Role: "faculty", FacultyID: "FAC01"},
+			"hemanm.cse2024@citchennai.net":          {Role: "faculty", FacultyID: "FAC02"},
+			"akashkumargouda.cse2024@citchennai.net": {Role: "faculty", FacultyID: "FAC03"},
+			"aadhishs.cse2024@citchennai.net":        {Role: "hod", FacultyID: ""},
+		}
+
+		config, allowed := accessMap[lowerEmail]
+		if !allowed {
+			_ = c.Error(utils.NewAuthorizationError("email is not authorized", nil))
+			c.Abort()
+			return
+		}
+
+		// Derive Identity
+		role := config.Role
+		facultyID := config.FacultyID
 
 		c.Set("email", email)
 		c.Set("role", role)

@@ -1,35 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { Shield, Loader2 } from 'lucide-react';
+import { UserRole } from '@/types';
+import { Shield, GraduationCap, Users, Loader2, Mail } from 'lucide-react';
 
 export default function Login() {
-  const { signInWithGoogle, isAuthenticated, user, isLoading } = useAuth();
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signIn, isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      if (user.role) {
-        navigate(`/${user.role}/dashboard`);
-      } else {
-        // Fallback if role is missing but authenticated
-        toast({ title: 'Access Denied', description: 'Your account does not have an assigned role.', variant: 'destructive' });
-      }
+      navigate(`/${user.role}/dashboard`);
     }
   }, [isAuthenticated, user, isLoading, navigate]);
 
-  const handleGoogleSignIn = async () => {
-    setIsSigningIn(true);
-    const { error } = await signInWithGoogle();
-    if (error) {
-      console.error(error);
-      toast({ title: 'Sign In Failed', description: 'Could not sign in with Google.', variant: 'destructive' });
-      setIsSigningIn(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedRole) {
+      toast({ title: 'Select Role', description: 'Please select your role to continue.', variant: 'destructive' });
+      return;
     }
-    // onAuthStateChanged in context handles the rest
+
+    if (!email.endsWith('@citchennai.net')) {
+      toast({ title: 'Invalid Email', description: 'Only @citchennai.net email addresses are allowed.', variant: 'destructive' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    // Simulate network delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const { error } = signIn(email, selectedRole);
+
+    if (error) {
+      toast({ title: 'Sign In Failed', description: error.message, variant: 'destructive' });
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -92,35 +104,41 @@ export default function Login() {
 
           <div className="login-form-header">
             <h2>Welcome Back</h2>
-            <p>Sign in with your institutional email to access the portal</p>
+            <p>Sign in to access the certificate verification portal</p>
           </div>
 
-          <div className="login-form">
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={isSigningIn}
-              className="btn btn-primary login-submit-btn"
-              style={{ height: '3.5rem', fontSize: '1rem', gap: '0.75rem' }}
-            >
-              {isSigningIn ? (
-                <Loader2 className="spinner" />
-              ) : (
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                  <path d="M1 1h22v22H1z" fill="none" />
-                </svg>
-              )}
-              {isSigningIn ? 'Signing In...' : 'Sign in with Google'}
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-role-section">
+              <label className="label">Select Your Role</label>
+              <div className="login-role-grid">
+                <button type="button" onClick={() => setSelectedRole('faculty')} className={`login-role-button ${selectedRole === 'faculty' ? 'selected' : ''}`}>
+                  <GraduationCap />
+                  <span>Faculty</span>
+                </button>
+                <button type="button" onClick={() => setSelectedRole('hod')} className={`login-role-button ${selectedRole === 'hod' ? 'selected' : ''}`}>
+                  <Users />
+                  <span>HOD</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="login-email-section">
+              <label className="label" htmlFor="email">Email</label>
+              <div className="login-email-input-wrapper">
+                <Mail />
+                <input id="email" type="email" placeholder="name@citchennai.net" value={email} onChange={(e) => setEmail(e.target.value)} className="input input-with-icon" required />
+              </div>
+            </div>
+
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary login-submit-btn">
+              {isSubmitting && <Loader2 className="spinner" style={{ width: '1.25rem', height: '1.25rem' }} />}
+              Sign In
             </button>
 
-            <p className="login-email-hint" style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-              Please use your @citchennai.net email address.
-            </p>
-          </div>
+
+
+            <p className="login-email-hint">Only @citchennai.net emails are allowed</p>
+          </form>
         </div>
       </div>
     </div>

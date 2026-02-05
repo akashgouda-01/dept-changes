@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { auth } from '@/config/firebase';
+
 
 // Prefer env; fall back to local backend default to avoid blank UI when env is missing locally.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -14,15 +14,18 @@ export const apiClient = axios.create({
 
 // Request Interceptor: Attach Token
 apiClient.interceptors.request.use(
-    async (config) => {
-        // Get fresh token from Firebase Auth
-        const user = auth.currentUser;
-        if (user) {
+    (config) => {
+        // Read the user object from localStorage
+        const storedUser = localStorage.getItem('eduvault_user');
+        if (storedUser) {
             try {
-                const token = await user.getIdToken();
-                config.headers.Authorization = `Bearer ${token}`;
+                const user = JSON.parse(storedUser);
+                // Header format: Bearer <email>|<role>
+                if (user.email && user.role) {
+                    config.headers.Authorization = `Bearer ${user.email}|${user.role}`;
+                }
             } catch (error) {
-                console.error("Error getting auth token", error);
+                console.error('Failed to parse user from local storage:', error);
             }
         }
         return config;

@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserRole } from '@/types';
-import { auth, googleProvider } from '@/config/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 interface AuthUser {
   id: string;
@@ -12,15 +10,14 @@ interface AuthUser {
   position?: string;
   department?: string;
   assignedSections?: string[];
-  token?: string;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
-  logout: () => Promise<void>;
+  signIn: (email: string, role: UserRole) => { error: Error | null };
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,106 +27,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setIsLoading(true);
-      if (currentUser) {
-        try {
-          const token = await currentUser.getIdToken();
-          const email = currentUser.email || '';
-          const derivedUser = deriveUserFromEmail(email, currentUser.uid, token);
-
-          if (derivedUser) {
-            setUser(derivedUser);
-            localStorage.setItem('eduvault_token', token);
-          } else {
-            // Invalid domain or role
-            setUser(null);
-            await signOut(auth);
-          }
-        } catch (error) {
-          console.error("Auth state change error", error);
-          setUser(null);
+    // Check local storage for persisted user
+    const storedUser = localStorage.getItem('eduvault_user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        // basic validation
+        if (parsedUser && parsedUser.email && parsedUser.role) {
+          setUser(parsedUser);
+        } else {
+          localStorage.removeItem('eduvault_user');
         }
-      } else {
-        setUser(null);
-        localStorage.removeItem('eduvault_token');
+      } catch (error) {
+        console.error('Failed to parse user from local storage:', error);
+        localStorage.removeItem('eduvault_user');
       }
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
+    }
+    setIsLoading(false);
   }, []);
 
-  const deriveUserFromEmail = (email: string, uid: string, token: string): AuthUser | null => {
-    if (!email.endsWith('@citchennai.net')) {
-      return null;
-    }
-
-    const prefix = email.split('@')[0].toLowerCase();
-    let role: UserRole = 'faculty'; // Default or need distinct logic
-    let staffId = 'FAC01';
-    let assignedSections: string[] | undefined;
-
-    if (prefix === 'hod') {
-      role = 'hod';
-      staffId = 'HOD01';
-    } else if (prefix.startsWith('faculty')) {
-      role = 'faculty';
-      if (prefix === 'faculty1') {
-        assignedSections = ['A', 'B', 'C', 'D', 'E', 'F'];
-        staffId = 'FAC01';
-      } else if (prefix === 'faculty2') {
-        assignedSections = ['G', 'H', 'I', 'J', 'K', 'L'];
-        staffId = 'FAC02';
-      } else if (prefix === 'faculty3') {
-        assignedSections = ['M', 'N', 'O', 'P', 'Q'];
-        staffId = 'FAC03';
-      } else {
-        assignedSections = ['A', 'B']; // Fallback
-        staffId = 'FAC00';
-      }
-    } else {
-      // Assume student or unknown
-      // For now, if we only strictly allowing faculty/hod:
-      // return null; 
-      // But let's allow basic access if needed or just return null
-      return null;
-    }
-
-    return {
-      id: uid,
-      name: currentUserDisplayName(auth.currentUser) || email.split('@')[0],
-      email: email,
-      role: role,
-      staffId: staffId,
-      position: role === 'hod' ? 'Head of Department' : 'Assistant Professor',
-      department: 'Computer Science & Engineering',
-      assignedSections,
-      token: token
-    };
-  }
-
-  const currentUserDisplayName = (u: FirebaseUser | null) => {
-    return u?.displayName || '';
-  }
-
-  const signInWithGoogle = async (): Promise<{ error: Error | null }> => {
+  const signIn = (email: string, role: UserRole): { error: Error | null } => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      // Whitelist Validation
+      const accessMap: Record<string, { role: UserRole; staffId: string; sections?: string[] }> = {
+        'harjeetp.cse2024@citchennai.net': {
+          role: 'faculty',
+          staffId: 'FAC01',
+          sections: ['A', 'B', 'C', 'D', 'E', 'F']
+        },
+        'hemanm.cse2024@citchennai.net': {
+          role: 'faculty',
+          staffId: 'FAC02',
+          sections: ['G', 'H', 'I', 'J', 'K', 'L']
+        },
+        'akashkumargouda.cse2024@citchennai.net': {
+          role: 'faculty',
+          staffId: 'FAC03',
+          sections: ['M', 'N', 'O', 'P', 'Q']
+        },
+        'aadhishs.cse2024@citchennai.net': {
+          role: 'hod',
+          staffId: 'HOD01'
+        }
+      };
+
+      const normalizedEmail = email.toLowerCase();
+      const userConfig = accessMap[normalizedEmail];
+
+      if (!userConfig) {
+        return { error: new Error('This email is not authorized.') };
+      }
+
+      if (userConfig.role !== role) {
+        return { error: new Error(`This email belongs to ${userConfig.role}, not ${role}.`) };
+      }
+
+      const newUser: AuthUser = {
+        id: crypto.randomUUID(),
+        name: email.split('@')[0],
+        email: email,
+        role: role,
+        staffId: userConfig.staffId,
+        position: role === 'hod' ? 'Head of Department' : 'Assistant Professor',
+        department: 'Computer Science & Engineering',
+        assignedSections: userConfig.sections
+      };
+
+      setUser(newUser);
+      localStorage.setItem('eduvault_user', JSON.stringify(newUser));
       return { error: null };
     } catch (error: any) {
       return { error };
     }
   };
 
-  const logout = async () => {
-    await signOut(auth);
+  const logout = () => {
     setUser(null);
-    localStorage.removeItem('eduvault_token');
+    localStorage.removeItem('eduvault_user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, signIn, logout }}>
       {children}
     </AuthContext.Provider>
   );

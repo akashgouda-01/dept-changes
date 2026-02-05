@@ -29,7 +29,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 
 	dashboardController := controllers.NewDashboardController(dashboardService)
 	dashboard := engine.Group("/dashboard")
-	dashboard.Use(middleware.AuthMiddleware("citchennai.net"))
+	dashboard.Use(middleware.MockAuthMiddleware("citchennai.net"))
 	{
 		dashboard.GET("/overview", dashboardController.GetOverview)
 		dashboard.GET("/sections", dashboardController.GetSections)
@@ -49,7 +49,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 	certController := controllers.NewCertificateController(certService)
 
 	certificates := engine.Group("/certificates")
-	certificates.Use(middleware.AuthMiddleware("citchennai.net"))
+	certificates.Use(middleware.MockAuthMiddleware("citchennai.net"))
 	{
 		certificates.POST("/upload", certController.UploadCertificates)
 		certificates.GET("/pending-review", certController.GetPendingReview)
@@ -58,7 +58,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 
 	// Verify endpoint (Faculty/HOD)
 	engine.POST("/faculty/certificate/verify",
-		middleware.AuthMiddleware("citchennai.net"),
+		middleware.MockAuthMiddleware("citchennai.net"),
 		certController.TriggerMockVerification,
 	)
 
@@ -69,7 +69,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 
 	hod := engine.Group("/hod")
 	hod.Use(
-		middleware.AuthMiddleware("citchennai.net"),
+		middleware.MockAuthMiddleware("citchennai.net"),
 		middleware.RequireRoles("HOD"),
 	)
 	{
