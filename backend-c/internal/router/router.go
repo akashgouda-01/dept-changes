@@ -63,6 +63,17 @@ func New(healthService internalService.HealthService, dashboardService services.
 		certificates.POST("/review", certController.SubmitReview)
 	}
 
+	// Student Routes
+	studentRepo := repositories.NewStudentRepository(db)
+	studentService := services.NewStudentService(studentRepo)
+	studentController := controllers.NewStudentController(studentService)
+
+	faculty := engine.Group("/faculty")
+	faculty.Use(middleware.MockAuthMiddleware("citchennai.net"))
+	{
+		faculty.GET("/students", studentController.GetStudentsBySection)
+	}
+
 	// Verify endpoint (Faculty/HOD)
 	engine.POST("/faculty/certificate/verify",
 		middleware.MockAuthMiddleware("citchennai.net"),

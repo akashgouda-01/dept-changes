@@ -27,6 +27,184 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
 }
 
+/* ================================
+   FACULTY PROFILE PAGE STYLES
+   ================================ */
+
+/* Page Titles */
+.dashboard-title {
+  font-size: 2.3rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.dashboard-subtitle {
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+}
+
+/* Profile Card */
+.profile-card {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 20px;
+  border: 1px solid rgba(200, 200, 200, 0.4);
+  padding: 2rem;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+  background: rgba(255, 255, 255, 0.7);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+}
+
+/* Profile Section Layout */
+.profile-content {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+}
+
+.profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar-box {
+  width: 90px;
+  height: 90px;
+  border-radius: 100%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 32px;
+  box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Profile Text */
+.profile-info {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.profile-position {
+  color: var(--muted-foreground);
+}
+
+/* Details Grid */
+.profile-details {
+  margin-top: 1.2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.profile-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-detail-label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-detail-value {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Section Badges */
+.profile-sections .badge {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ================================
+   TABLE CARD STYLES
+   ================================ */
+
+.bg-card {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 18px;
+  backdrop-filter: blur(12px);
+}
+
+.table-card {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* Table Header */
+table thead {
+  background: rgba(240, 240, 240, 0.65);
+  backdrop-filter: blur(6px);
+}
+
+table th {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  padding: 14px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+/* Table Body */
+table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+table tbody tr:nth-child(even) {
+  background: rgba(240, 240, 240, 0.45);
+}
+
+table tbody tr:hover {
+  background: rgba(0, 122, 255, 0.08);
+}
+
+/* Table Cells */
+table td {
+  padding: 14px;
+  vertical-align: middle;
+}
+
+table td span {
+  background: rgba(200, 200, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: var(--muted-foreground);
+}
+
+/* Loader Centering */
+.loading-state {
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .section-card-title {
   font-size: 1.1rem;
   font-weight: 700;
