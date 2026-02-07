@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -8,8 +8,10 @@ import { fetchStudentsBySection, Student } from '@/api/student.api';
 export default function FacultyProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [students, setStudents] = useState<Student[]>([]);
+  // allStudents source of truth
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<string>('all');
 
   useEffect(() => {
     const loadAllStudents = async () => {
@@ -34,13 +36,13 @@ export default function FacultyProfile() {
         const results = await Promise.all(promises);
 
         // Flatten the array of arrays into a single list of students
-        const allStudents = results.flat();
+        const allStudentsData = results.flat();
 
         // Sort by register number or name if desired (optional)
-        allStudents.sort((a, b) => a.registerNumber.localeCompare(b.registerNumber));
+        allStudentsData.sort((a, b) => a.registerNumber.localeCompare(b.registerNumber));
 
-        console.log(`Fetched total ${allStudents.length} students`);
-        setStudents(allStudents);
+        console.log(`Fetched total ${allStudentsData.length} students`);
+        setAllStudents(allStudentsData);
 
       } catch (error) {
         console.error("Error fetching students:", error);
@@ -56,6 +58,19 @@ export default function FacultyProfile() {
 
     loadAllStudents();
   }, [user, toast]);
+
+  // Robust filtering logic
+  const filteredStudents = useMemo(() => {
+    if (selectedSection === 'all') {
+      return allStudents;
+    }
+    return allStudents.filter(student => {
+      // Normalize student section: remove "Section" prefix (case insensitive) and trim whitespace
+      const normalizedStudentSection = student.section.replace(/section\s*/i, '').trim().toLowerCase();
+      const targetSection = selectedSection.toLowerCase();
+      return normalizedStudentSection === targetSection;
+    });
+  }, [allStudents, selectedSection]);
 
   return (
     <DashboardLayout requiredRole="faculty">
@@ -111,14 +126,34 @@ export default function FacultyProfile() {
 
         <div className="bg-card border rounded-lg shadow-sm">
           <div className="p-6 border-b">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                <Users size={24} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                  <Users size={24} />
+                </div>
+                <h2 className="text-xl font-bold">All Students</h2>
               </div>
-              <h2 className="text-xl font-bold">All Students</h2>
+
+              {/* Native Select Filter matching CertificateVerification style */}
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Section</span>
+                <select
+                  value={selectedSection}
+                  onChange={(e) => setSelectedSection(e.target.value)}
+                  className="input h-10 w-[150px] cursor-pointer"
+                >
+                  <option value="all">All Sections</option>
+                  {user?.assignedSections?.map((section) => (
+                    <option key={section} value={section}>Section {section}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              Viewing {students.length} students from your assigned sections.
+              Viewing {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''}
+              {selectedSection === 'all'
+                ? ' from your assigned sections'
+                : ` from Section ${selectedSection}`}.
             </p>
           </div>
 
@@ -128,7 +163,7 @@ export default function FacultyProfile() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
                 <p className="text-sm text-muted-foreground">Loading student data...</p>
               </div>
-            ) : students.length > 0 ? (
+            ) : filteredStudents.length > 0 ? (
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-left">
                   <tr>
@@ -139,7 +174,7 @@ export default function FacultyProfile() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {students.map((student) => {
+                  {filteredStudents.map((student) => {
                     // Debug log to check data integrity
                     if (!student.name || !student.email) console.warn("Missing data for student:", student);
 
