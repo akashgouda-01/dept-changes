@@ -1,8 +1,13 @@
 package services
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
+	"os"
 	"regexp"
 	"time"
 
@@ -11,13 +16,13 @@ import (
 )
 
 var (
-	ErrInvalidDriveLink            = errors.New("drive link must be a valid Google Drive URL")
-	ErrUploadLimitExceeded         = errors.New("cannot upload more than 10 certificates in one request")
-	ErrInvalidMLTransition         = errors.New("ml status transition is not allowed")
-	ErrInvalidFacultyState         = errors.New("faculty decision is only allowed after ML verification and while pending")
-	ErrCertificateArchived         = errors.New("archived certificates cannot be modified")
-	driveLinkPattern               = regexp.MustCompile(`^https://drive\.google\.com/`)
-	defaultMLScore         float64 = 95.0
+	ErrInvalidDriveLink     = errors.New("drive link must be a valid Google Drive URL")
+	ErrUploadLimitExceeded  = errors.New("cannot upload more than 10 certificates in one request")
+	ErrInvalidMLTransition  = errors.New("ml status transition is not allowed")
+	ErrInvalidFacultyState  = errors.New("faculty decision is only allowed after ML verification and while pending")
+	ErrCertificateArchived  = errors.New("archived certificates cannot be modified")
+	ErrMLServiceUnavailable = errors.New("ml service is unavailable")
+	driveLinkPattern        = regexp.MustCompile(`^https://drive\.google\.com/`)
 )
 
 // CertificateInput represents an upload payload.
@@ -33,7 +38,7 @@ type CertificateInput struct {
 // CertificateService describes business operations for certificates.
 type CertificateService interface {
 	UploadCertificates(ctx context.Context, inputs []CertificateInput) error
-	TriggerMockMLVerification(ctx context.Context, certificateID string) error
+	TriggerMLVerification(ctx context.Context, certificateID string) error
 	GetPendingFacultyReview(ctx context.Context, limit int, facultyID string) ([]models.Certificate, error)
 	SubmitFacultyDecision(ctx context.Context, certificateID string, status models.FacultyStatus, isLegit bool) error
 }
@@ -47,7 +52,7 @@ func NewCertificateService(repo repositories.CertificateRepository) CertificateS
 	return &certificateService{repo: repo}
 }
 
-// UploadCertificates validates input and delegates creation; kicks off mock ML verification.
+// UploadCertificates validates input and delegates creation; kicks off ML verification.
 func (s *certificateService) UploadCertificates(ctx context.Context, inputs []CertificateInput) error {
 	if len(inputs) == 0 {
 		return nil
@@ -82,18 +87,19 @@ func (s *certificateService) UploadCertificates(ctx context.Context, inputs []Ce
 		return err
 	}
 
-	// Trigger mock async ML verification.
+	// Trigger async ML verification.
 	for _, cert := range certs {
 		certID := cert.ID
 		go func(id string) {
-			_ = s.TriggerMockMLVerification(context.Background(), id)
+			// Create a background context for the async operation
+			_ = s.TriggerMLVerification(context.Background(), id)
 		}(certID)
 	}
 	return nil
 }
 
-// TriggerMockMLVerification simulates an asynchronous ML process by marking verified.
-func (s *certificateService) TriggerMockMLVerification(ctx context.Context, certificateID string) error {
+// TriggerMLVerification triggers the real ML verification by calling the Python ML service.
+func (s *certificateService) TriggerMLVerification(ctx context.Context, certificateID string) error {
 	cert, err := s.repo.GetByID(ctx, certificateID)
 	if err != nil {
 		return err
@@ -105,7 +111,50 @@ func (s *certificateService) TriggerMockMLVerification(ctx context.Context, cert
 		return ErrInvalidMLTransition
 	}
 
-	return s.repo.UpdateMLStatus(ctx, certificateID, models.MLStatusVerified, &defaultMLScore)
+	// Prepare request to ML service
+	mlServiceBase := os.Getenv("ML_SERVICE_URL")
+	if mlServiceBase == "" {
+		mlServiceBase = "http://localhost:8000"
+	}
+	mlServiceURL := fmt.Sprintf("%s/verify", mlServiceBase)
+	reqBody, _ := json.Marshal(map[string]string{
+		"drive_link": cert.DriveLink,
+	})
+
+	req, err := http.NewRequestWithContext(ctx, "POST", mlServiceURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Call ML service
+	client := &http.Client{Timeout: 120 * time.Second} // Long timeout for ML processing
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrMLServiceUnavailable, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("ml service returned status: %d", resp.StatusCode)
+	}
+
+	// Parse ML response
+	var mlResult struct {
+		TrustScore   float64                `json:"trust_score"`
+		FinalVerdict string                 `json:"final_verdict"`
+		Components   map[string]interface{} `json:"components"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&mlResult); err != nil {
+		return fmt.Errorf("failed to decode ml response: %v", err)
+	}
+
+	mlScore := mlResult.TrustScore
+
+	// Update DB with ML results
+	// Note: We currently just mark as verified if successful.
+	// You might want to map FinalVerdict to different statuses if needed.
+	return s.repo.UpdateMLStatus(ctx, certificateID, models.MLStatusVerified, &mlScore)
 }
 
 // GetPendingFacultyReview fetches ML-verified certificates pending faculty action.

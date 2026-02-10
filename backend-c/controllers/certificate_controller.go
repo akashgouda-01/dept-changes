@@ -125,11 +125,10 @@ func (cc *CertificateController) SubmitReview(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "review recorded"})
 }
 
-// TriggerMockVerification handles:
+// TriggerVerification handles:
 // POST /faculty/certificate/verify
-// This endpoint only triggers the existing mock ML verification and returns
-// a static response; no real ML integration is performed here.
-func (cc *CertificateController) TriggerMockVerification(c *gin.Context) {
+// This endpoint triggers the ML verification workflow.
+func (cc *CertificateController) TriggerVerification(c *gin.Context) {
 	if !cc.requireRole(c, "faculty", "hod") {
 		return
 	}
@@ -142,14 +141,14 @@ func (cc *CertificateController) TriggerMockVerification(c *gin.Context) {
 		return
 	}
 
-	if err := cc.service.TriggerMockMLVerification(c.Request.Context(), payload.CertificateID); err != nil {
+	if err := cc.service.TriggerMLVerification(c.Request.Context(), payload.CertificateID); err != nil {
 		_ = c.Error(mapServiceError(err))
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "mock ML verification triggered",
+		"message": "ML verification triggered",
 	})
 }
 

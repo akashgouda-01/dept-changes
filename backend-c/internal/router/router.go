@@ -77,7 +77,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 	// Verify endpoint (Faculty/HOD)
 	engine.POST("/faculty/certificate/verify",
 		middleware.MockAuthMiddleware("citchennai.net"),
-		certController.TriggerMockVerification,
+		certController.TriggerVerification,
 	)
 
 	// HOD-facing endpoints
