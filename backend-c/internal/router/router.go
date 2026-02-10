@@ -24,6 +24,15 @@ func New(healthService internalService.HealthService, dashboardService services.
 		middleware.ErrorHandler(logger),
 	)
 
+	// Root Route for checking deployment status
+	engine.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":  "success",
+			"message": "EduVault Backend is running",
+			"service": "backend",
+		})
+	})
+
 	healthController := internalController.NewHealthController(healthService)
 	engine.GET("/health", healthController.Health)
 
