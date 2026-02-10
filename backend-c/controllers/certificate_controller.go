@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -63,6 +64,7 @@ func (cc *CertificateController) UploadCertificates(c *gin.Context) {
 	}
 
 	if err := cc.service.UploadCertificates(c.Request.Context(), inputs); err != nil {
+		fmt.Printf("UploadCertificates failed: %v\n", err)
 		_ = c.Error(mapServiceError(err))
 		return
 	}

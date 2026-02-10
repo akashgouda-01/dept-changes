@@ -19,7 +19,20 @@ def verify_certificate(req: VerifyRequest):
     print(f"🚀 Verifying: {req.drive_link}")
 
     # 0. Forensics
-    pdf_forensics = run_pdf_name_forensics(req.drive_link)
+
+    try:
+        pdf_forensics = run_pdf_name_forensics(req.drive_link)
+    except Exception as e:
+        print(f"⚠️ Forensics/Download failed: {e}")
+        return {
+            "trust_score": 0.0,
+            "final_verdict": "SUSPICIOUS",
+            "components": {
+                "forensics": {"error": str(e)},
+                "phash": {},
+                "cnn": {}
+            }
+        }
 
     # 1. Download & Convert
     try:
