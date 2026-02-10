@@ -8,9 +8,8 @@ tqdm==4.67.1
 PyYAML==6.0.3
 
 pdf2image==1.17.0
-pillow==12.0.0
-PyMuPDF==1.23.7
-PyMuPDFb==1.23.7
+pillow==11.0.0
+PyMuPDF>=1.24.0
 imageio==2.37.2
 tifffile==2025.12.20
 
@@ -36,3 +35,4 @@ MarkupSafe==3.0.3
 
 fastapi==0.109.2
 uvicorn==0.27.1
+imagehash==4.3
