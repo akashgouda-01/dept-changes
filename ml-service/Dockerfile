@@ -34,5 +34,8 @@ COPY --chown=user . $HOME/app
 # Expose port (Hugging Face uses 7860 by default)
 EXPOSE 7860
 
+# DEBUG: List all files to verify structure
+RUN ls -R
+
 # Start command
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
