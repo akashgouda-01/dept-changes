@@ -65,26 +65,16 @@ func (r *dashboardRepository) GetOverview(ctx context.Context, facultyID string)
 		SELECT
 			COALESCE(COUNT(DISTINCT reg_no), 0) AS total_students,
 			COALESCE(COUNT(*), 0) AS total_certificates,
-			COALESCE(COUNT(CASE WHEN faculty_status = 'LEGIT' THEN 1 END), 0) AS verified_count,
-			COALESCE(COUNT(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 END), 0) AS rejected_count,
-			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' AND ml_status = 'VERIFIED' THEN 1 END), 0) AS pending_count
+			COALESCE(SUM(CASE WHEN faculty_status = 'LEGIT' THEN 1 ELSE 0 END), 0) AS verified_count,
+			COALESCE(SUM(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 ELSE 0 END), 0) AS rejected_count,
+			COALESCE(SUM(CASE WHEN faculty_status = 'PENDING' THEN 1 ELSE 0 END), 0) AS pending_count
 		FROM faculty_certificates
 		WHERE archived = false
 	`
 
 	if facultyID != "" {
-		// As per instructions, filtered by faculty_id
 		query += " AND faculty_id = ?"
 		args = append(args, facultyID)
-
-		// Force section filtering based on Faculty ID allocation
-		if facultyID == "FAC01" {
-			query += " AND section <= 'F'"
-		} else if facultyID == "FAC02" {
-			query += " AND section >= 'G' AND section <= 'L'"
-		} else if facultyID == "FAC03" {
-			query += " AND section >= 'M'"
-		}
 	}
 
 	query += ";"
@@ -115,9 +105,9 @@ func (r *dashboardRepository) GetSectionStats(ctx context.Context, facultyID str
 		SELECT
 			section AS section,
 			COALESCE(COUNT(*), 0) AS total_certificates,
-			COALESCE(COUNT(CASE WHEN faculty_status = 'LEGIT' THEN 1 END), 0) AS verified_certificates,
-			COALESCE(COUNT(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 END), 0) AS rejected_certificates,
-			COALESCE(COUNT(CASE WHEN faculty_status = 'PENDING' AND ml_status = 'VERIFIED' THEN 1 END), 0) AS pending_certificates
+			COALESCE(SUM(CASE WHEN faculty_status = 'LEGIT' THEN 1 ELSE 0 END), 0) AS verified_certificates,
+			COALESCE(SUM(CASE WHEN faculty_status = 'NOT_LEGIT' THEN 1 ELSE 0 END), 0) AS rejected_certificates,
+			COALESCE(SUM(CASE WHEN faculty_status = 'PENDING' THEN 1 ELSE 0 END), 0) AS pending_certificates
 		FROM faculty_certificates
 		WHERE archived = false
 	`
@@ -125,15 +115,6 @@ func (r *dashboardRepository) GetSectionStats(ctx context.Context, facultyID str
 	if facultyID != "" {
 		query += " AND faculty_id = ?"
 		args = append(args, facultyID)
-
-		// Force section filtering based on Faculty ID allocation
-		if facultyID == "FAC01" {
-			query += " AND section <= 'F'"
-		} else if facultyID == "FAC02" {
-			query += " AND section >= 'G' AND section <= 'L'"
-		} else if facultyID == "FAC03" {
-			query += " AND section >= 'M'"
-		}
 	}
 
 	query += " GROUP BY section ORDER BY section;"
