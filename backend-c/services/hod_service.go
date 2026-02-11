@@ -29,6 +29,7 @@ type HodService interface {
 	ExportCertificatesBySection(ctx context.Context, section string) (string, []byte, error)
 	ExportCertificatesByStudent(ctx context.Context, regNo string) (string, []byte, error)
 	ExportCertificatesByFaculty(ctx context.Context, facultyID string) (string, []byte, error)
+	ExportAllCertificates(ctx context.Context) (string, []byte, error)
 }
 
 type hodService struct {
@@ -98,6 +99,20 @@ func (s *hodService) ExportCertificatesByFaculty(ctx context.Context, facultyID 
 	filename := fmt.Sprintf("%s_VERIFIED_CERTIFICATES_%s.xlsx", sanitizeForFilename(facultyID), dateStr)
 
 	bytes, err := excel.BuildCertificatesWorkbook(certs, fmt.Sprintf("Faculty-%s", facultyID))
+	return filename, bytes, err
+}
+
+func (s *hodService) ExportAllCertificates(ctx context.Context) (string, []byte, error) {
+	certs, err := s.repo.GetAllCertificates(ctx)
+	if err != nil {
+		return "", nil, err
+	}
+
+	dateStr := time.Now().Format("20060102")
+	filename := fmt.Sprintf("ALL_CERTIFICATES_EXPORT_%s.xlsx", dateStr)
+
+	// BuildWorkbook handles creating sheets per section automatically
+	bytes, err := excel.BuildCertificatesWorkbook(certs, "All")
 	return filename, bytes, err
 }
 

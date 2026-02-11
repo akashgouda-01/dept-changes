@@ -33,3 +33,10 @@ export const exportCertificatesByFaculty = async (facultyId: string) => {
     });
     return response;
 };
+
+export const exportAllCertificates = async () => {
+    const response = await apiClient.get(`/hod/export/certificates/all`, {
+        responseType: 'blob',
+    });
+    return response;
+};

@@ -26,6 +26,7 @@ type HodRepository interface {
 	GetCertificatesByStudent(ctx context.Context, regNo string) ([]models.Certificate, error)
 	GetCertificatesBySection(ctx context.Context, section string) ([]models.Certificate, error)
 	GetCertificatesByFacultyID(ctx context.Context, facultyID string) ([]models.Certificate, error)
+	GetAllCertificates(ctx context.Context) ([]models.Certificate, error)
 }
 
 type hodRepository struct {
@@ -35,6 +36,25 @@ type hodRepository struct {
 // NewHodRepository creates a HOD repository instance.
 func NewHodRepository(db *gorm.DB) HodRepository {
 	return &hodRepository{db: db}
+}
+
+// getFacultySections maps new Faculty IDs to their assigned sections.
+// verified duplicates from dashboard_repository.go
+func (r *hodRepository) getFacultySections(facultyID string) []string {
+	switch facultyID {
+	case "CSE245":
+		return []string{"L", "M", "N", "O", "P", "Q"}
+	case "CSE086":
+		return []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"}
+	case "CSE262":
+		// C,D,E,F,G,I,H -> Sorted: C, D, E, F, G, H, I
+		return []string{"C", "D", "E", "F", "G", "H", "I"}
+	case "CSE345":
+		// A,B,I,J,K
+		return []string{"A", "B", "I", "J", "K"}
+	default:
+		return nil
+	}
 }
 
 // GetStudentStatsByFaculty aggregates certificate counts per student for a faculty member.
@@ -54,12 +74,28 @@ func (r *hodRepository) GetStudentStatsByFaculty(ctx context.Context, facultyID 
 			COUNT(*) FILTER (WHERE c.faculty_status = 'NOT_LEGIT') AS rejected,
 			COUNT(*) FILTER (WHERE c.faculty_status = 'PENDING') AS pending
 		FROM faculty_certificates c
-		WHERE c.archived = false AND c.faculty_id = ?
+		WHERE c.archived = false
+	`
+
+	args := []interface{}{}
+
+	// Use section mapping to filter active students by section
+	sections := r.getFacultySections(facultyID)
+	if len(sections) > 0 {
+		query += " AND c.section IN ?"
+		args = append(args, sections)
+	} else {
+		// Fallback to strict faculty_id match if no section mapping exists
+		query += " AND c.faculty_id = ?"
+		args = append(args, facultyID)
+	}
+
+	query += `
 		GROUP BY c.reg_no, c.section
 		ORDER BY c.reg_no;
 	`
 
-	if err := r.db.WithContext(ctx).Raw(query, facultyID).Scan(&rows).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&rows).Error; err != nil {
 		return nil, fmt.Errorf("query student stats: %w", err)
 	}
 
@@ -107,12 +143,31 @@ func (r *hodRepository) GetCertificatesByFacultyID(ctx context.Context, facultyI
 	}
 
 	var certs []models.Certificate
-	if err := r.db.WithContext(ctx).
-		Where("faculty_id = ? AND archived = false", facultyID).
-		Order("section ASC, reg_no ASC").
-		Find(&certs).Error; err != nil {
+	query := r.db.WithContext(ctx).Where("archived = false")
+
+	// Use section mapping if available
+	sections := r.getFacultySections(facultyID)
+	if len(sections) > 0 {
+		query = query.Where("section IN ?", sections)
+	} else {
+		query = query.Where("faculty_id = ?", facultyID)
+	}
+
+	if err := query.Order("section ASC, reg_no ASC").Find(&certs).Error; err != nil {
 		return nil, fmt.Errorf("query certificates by faculty: %w", err)
 	}
 
+	return certs, nil
+}
+
+// GetAllCertificates returns all active certificates in the system.
+func (r *hodRepository) GetAllCertificates(ctx context.Context) ([]models.Certificate, error) {
+	var certs []models.Certificate
+	if err := r.db.WithContext(ctx).
+		Where("archived = false").
+		Order("section ASC, reg_no ASC").
+		Find(&certs).Error; err != nil {
+		return nil, fmt.Errorf("query all certificates: %w", err)
+	}
 	return certs, nil
 }

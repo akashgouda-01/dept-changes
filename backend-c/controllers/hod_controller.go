@@ -129,3 +129,17 @@ func (hc *HodController) ExportCertificatesByFaculty(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename=\""+filename+"\"")
 	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content)
 }
+
+// ExportAllCertificates handles:
+// GET /hod/export/certificates/all
+func (hc *HodController) ExportAllCertificates(c *gin.Context) {
+	filename, content, err := hc.service.ExportAllCertificates(c.Request.Context())
+	if err != nil {
+		_ = c.Error(utils.NewDatabaseError("failed to export all certificates", err))
+		return
+	}
+
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content)
+}

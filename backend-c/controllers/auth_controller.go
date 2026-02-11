@@ -29,10 +29,11 @@ type UserConfig struct {
 
 // Whitelist configuration
 var validUsers = map[string]UserConfig{
-	"harjeetp.cse2024@citchennai.net":        {Role: "faculty", FacultyID: "FAC01", Password: "HARJEETP_FAC01"},
-	"hemanm.cse2024@citchennai.net":          {Role: "faculty", FacultyID: "FAC02", Password: "HEMANM_FAC02"},
-	"akashkumargouda.cse2024@citchennai.net": {Role: "faculty", FacultyID: "FAC03", Password: "AKASHKUMARGOUDA_FAC03"},
-	"aadhishs.cse2024@citchennai.net":        {Role: "hod", FacultyID: "HOD01", Password: "AADHISHS_HOD01"},
+	"poornimalakshmir@citchennai.net":    {Role: "faculty", FacultyID: "CSE245", Password: "R.POORNIMALAKSHMI_CSE245"},
+	"selvajothim@citchennai.net":         {Role: "faculty", FacultyID: "CSE086", Password: "SELVAJOTHIM_CSE086"},
+	"nishanthinis@citchennai.net":        {Role: "faculty", FacultyID: "CSE262", Password: "NISHANTHINIS_CSE262"},
+	"ayeeshanasreenm.cse@citchennai.net": {Role: "faculty", FacultyID: "CSE345", Password: "M.AYEESHANASREEN_CSE345"},
+	"aadhishs.cse2024@citchennai.net":    {Role: "hod", FacultyID: "HOD01", Password: "AADHISHS_HOD01"},
 }
 
 func (ac *AuthController) Login(c *gin.Context) {

@@ -76,7 +76,7 @@ export default function HodFacultyStats() {
                                 <Search className="w-4 h-4" />
                                 <input
                                     id="facultyId"
-                                    placeholder="e.g. FAC01"
+                                    placeholder="e.g. CSE245"
                                     value={facultyId}
                                     onChange={(e) => setFacultyId(e.target.value)}
                                     className="input input-with-icon"

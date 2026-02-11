@@ -28,7 +28,8 @@ export function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon"><Shield /></div>
+          {/* <div className="sidebar-logo-icon"><Shield /></div> */}
+          <img src="/logo.svg" alt="EduVault" className="w-8 h-8 object-contain" />
           <div className="sidebar-logo-text">
             <h1>EduVault</h1>
             <p>CSE Department</p>

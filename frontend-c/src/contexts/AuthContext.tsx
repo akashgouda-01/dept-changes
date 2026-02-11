@@ -73,9 +73,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       // Temporary Hardcoded Section Map until backend sends it
-      if (newUser.id === 'FAC01') newUser.assignedSections = ['A', 'B', 'C', 'D', 'E', 'F'];
-      if (newUser.id === 'FAC02') newUser.assignedSections = ['G', 'H', 'I', 'J', 'K', 'L'];
-      if (newUser.id === 'FAC03') newUser.assignedSections = ['M', 'N', 'O', 'P', 'Q'];
+      // Map Faculty Details based on ID
+      if (newUser.id === 'CSE245') {
+        newUser.name = 'R. Poornima Lakshmi';
+        newUser.assignedSections = ['L', 'M', 'N', 'O', 'P', 'Q'];
+      }
+      if (newUser.id === 'CSE086') {
+        newUser.name = 'Selvajothi M';
+        newUser.assignedSections = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+      }
+      if (newUser.id === 'CSE262') {
+        newUser.name = 'Nishanthini S';
+        newUser.assignedSections = ['C', 'D', 'E', 'F', 'G', 'H', 'I'];
+      }
+      if (newUser.id === 'CSE345') {
+        newUser.name = 'M. Ayeesha Nasreen';
+        newUser.assignedSections = ['A', 'B', 'I', 'J', 'K'];
+      }
 
 
       setUser(newUser);

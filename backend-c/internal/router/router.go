@@ -106,6 +106,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 		hod.GET("/export/certificates/section", hodController.ExportCertificatesBySection)
 		hod.GET("/export/certificates/student", hodController.ExportCertificatesByStudent)
 		hod.GET("/export/certificates/faculty", hodController.ExportCertificatesByFaculty)
+		hod.GET("/export/certificates/all", hodController.ExportAllCertificates)
 	}
 
 	return engine

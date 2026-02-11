@@ -69,7 +69,8 @@ export default function Login() {
 
         <div className="login-branding-header">
           <div className="login-branding-logo">
-            <div className="login-branding-logo-icon"><Shield /></div>
+            {/* <div className="login-branding-logo-icon"><Shield /></div> */}
+            <img src="/logo.svg" alt="EduVault Logo" className="w-16 h-16 object-contain" />
             <div>
               <div className="login-branding-title">EduVault</div>
               <div className="login-branding-subtitle">Certificate Verification System</div>
@@ -103,7 +104,8 @@ export default function Login() {
         <div className="login-form-wrapper">
           <div className="login-mobile-logo">
             <div className="login-mobile-logo-inner">
-              <div className="login-mobile-logo-icon"><Shield /></div>
+              {/* <div className="login-mobile-logo-icon"><Shield /></div> */}
+              <img src="/logo.svg" alt="EduVault Logo" className="w-12 h-12 object-contain" />
               <h1 className="login-mobile-logo-title">EduVault</h1>
             </div>
           </div>

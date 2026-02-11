@@ -29,9 +29,6 @@ export default function HodDashboard() {
         ]);
 
         if (isMounted) {
-          // Check for success flag if API returns standard wrapper, or direct data if api.ts unwraps it.
-          // api.ts returns response.data. The controllers return { success: true, data: ... }
-          // So overviewRes is ALL of { success, data }.
           if (overviewRes.success) {
             setOverview(overviewRes.data as DashboardOverview);
           }
@@ -77,9 +74,6 @@ export default function HodDashboard() {
           <div className="flex gap-2">
             <button className="btn btn-outline" onClick={() => navigate('/hod/faculty-stats')}>
               <Users /> Faculty Stats Lookup
-            </button>
-            <button className="btn btn-outline">
-              <Download /> Export All Data
             </button>
           </div>
         </div>
