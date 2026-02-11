@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Upload, Link as LinkIcon, Plus, Trash2, CheckCircle2, XCircle, Clock, Download, Eye, Cpu, ShieldCheck, User } from 'lucide-react';
 import { Certificate, UploadCertificatePayload } from '@/types';
 import { uploadCertificates, getPendingReviewCertificates, submitReview } from '@/api';
+import { fetchStudentByRegNo } from '@/api/student.api';
 
 interface CertificateEntry {
   id: string;
@@ -78,7 +79,6 @@ export default function CertificateVerification() {
       toast({ title: 'Success', description: `${validEntries.length} certificate(s) uploaded successfully.` });
       setEntries([{ id: Date.now().toString(), driveLink: '', registerNumber: '', section: '', studentName: '' }]);
 
-      // Refresh list (though they might be in ML pending state, not Faculty pending yet, but good to refresh)
       fetchPending();
     } catch (error: any) {
       toast({ title: 'Upload Failed', description: error.response?.data?.message || 'Failed to upload certificates.', variant: 'destructive' });
@@ -90,19 +90,62 @@ export default function CertificateVerification() {
   const handleVerify = async (certId: string, isLegit: boolean) => {
     try {
       await submitReview(certId, isLegit ? 'LEGIT' : 'NOT_LEGIT', isLegit);
-
-      // Optimistic update
       setCertificates(certificates.filter(c => c.ID !== certId));
-
       toast({ title: isLegit ? 'Certificate Verified' : 'Certificate Rejected', variant: isLegit ? 'default' : 'destructive' });
     } catch (error: any) {
       toast({ title: 'Action Failed', description: error.response?.data?.message || 'Failed to submit review.', variant: 'destructive' });
     }
   };
 
-  // Filter local state? Currently we only fetch PENDING from API.
-  // Unless we store history, the other tabs will remain empty or we need another API.
-  // For now we only show pending.
+  const handleRegisterNumberBlur = async (id: string, value: string) => {
+    if (!value || value.length < 6) return;
+
+    try {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
+
+      const student = await fetchStudentByRegNo(value);
+      if (student) {
+        setEntries(currentEntries => currentEntries.map(e => {
+          if (e.id === id) {
+            return {
+              ...e,
+              studentName: student.name,
+              section: user?.assignedSections?.find(s =>
+                s === student.section ||
+                student.section === `Section ${s}` ||
+                student.section.endsWith(` ${s}`)
+              ) || '', // Try to find matching section in dropdown
+            };
+          }
+          return e;
+        }));
+        toast({ title: 'Student Found', description: `Auto-filled details for ${student.name}` });
+      }
+    } catch (error: any) {
+      // Handle Access Denied / Not Found
+      if (error?.response?.status === 404 || error?.response?.status === 403) {
+        toast({
+          title: 'Access Denied',
+          description: 'Student not found in your assigned sections.',
+          variant: 'destructive'
+        });
+
+        // Clear fields on error to prevent invalid submission attempts
+        setEntries(currentEntries => currentEntries.map(e => {
+          if (e.id === id) {
+            return {
+              ...e,
+              studentName: '',
+              section: ''
+            };
+          }
+          return e;
+        }));
+      }
+    }
+  };
+
   const displayCerts = certificates;
 
   return (
@@ -129,7 +172,13 @@ export default function CertificateVerification() {
 
                 <div className="upload-field">
                   <span className="upload-field-label">Register Number</span>
-                  <input placeholder="24CS0001" value={entry.registerNumber} onChange={(e) => updateEntry(entry.id, 'registerNumber', e.target.value)} className="input font-mono" />
+                  <input
+                    placeholder="24CS0001"
+                    value={entry.registerNumber}
+                    onChange={(e) => updateEntry(entry.id, 'registerNumber', e.target.value)}
+                    onBlur={(e) => handleRegisterNumberBlur(entry.id, e.target.value)}
+                    className="input font-mono"
+                  />
                 </div>
 
                 <div className="upload-field">
@@ -159,7 +208,6 @@ export default function CertificateVerification() {
         <div className="space-y-6">
           <div className="tabs-list">
             <button className={`tab-trigger ${activeTab === 'pending' ? 'active-warning' : ''}`} onClick={() => setActiveTab('pending')}><Clock /> Pending ({certificates.length})</button>
-            {/* Disabled tabs for history as endpoint is missing */}
             <button className={`tab-trigger disabled opacity-50 cursor-not-allowed`}><CheckCircle2 /> Legitimate</button>
             <button className={`tab-trigger disabled opacity-50 cursor-not-allowed`}><XCircle /> Not Legitimate</button>
           </div>

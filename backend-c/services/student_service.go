@@ -8,6 +8,7 @@ import (
 
 type StudentService interface {
 	GetStudentsBySection(ctx context.Context, section string) ([]models.Student, error)
+	GetStudentByRegNo(ctx context.Context, regNo string, allowedSections []string) (*models.Student, error)
 }
 
 type studentService struct {
@@ -20,4 +21,8 @@ func NewStudentService(repo repositories.StudentRepository) StudentService {
 
 func (s *studentService) GetStudentsBySection(ctx context.Context, section string) ([]models.Student, error) {
 	return s.repo.GetStudentsBySection(ctx, section)
+}
+
+func (s *studentService) GetStudentByRegNo(ctx context.Context, regNo string, allowedSections []string) (*models.Student, error) {
+	return s.repo.GetStudentByRegNo(ctx, regNo, allowedSections)
 }

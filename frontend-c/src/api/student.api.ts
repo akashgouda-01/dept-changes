@@ -17,3 +17,8 @@ export const fetchStudentsBySection = async (section: string): Promise<Student[]
   });
   return response.data;
 };
+
+export const fetchStudentByRegNo = async (regNo: string): Promise<Student> => {
+  const response = await apiClient.get<Student>(`/faculty/student/${regNo}`);
+  return response.data;
+};

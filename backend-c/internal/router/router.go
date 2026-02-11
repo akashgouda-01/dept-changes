@@ -81,6 +81,7 @@ func New(healthService internalService.HealthService, dashboardService services.
 	faculty.Use(middleware.MockAuthMiddleware("citchennai.net"))
 	{
 		faculty.GET("/students", studentController.GetStudentsBySection)
+		faculty.GET("/student/:regNo", studentController.GetStudentByRegNo)
 	}
 
 	// Verify endpoint (Faculty/HOD)
